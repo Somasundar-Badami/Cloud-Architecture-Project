@@ -1,0 +1,86 @@
+{
+  "total_count": {
+    "total_records": 711,
+    "within_target_range_600_900": true
+  },
+  "missing_values": {
+    "total_missing_values": 0,
+    "missing_by_column": {},
+    "passed": true
+  },
+  "duplicates": {
+    "full_row_duplicates": 0,
+    "feature_only_duplicates": 610,
+    "feature_only_duplicates_within_same_scenario": 610,
+    "feature_only_duplicates_across_different_scenarios": 0,
+    "cross_scenario_duplicate_groups": {},
+    "note": "Verified by direct inspection: 100% of feature_only_duplicates in this dataset occur WITHIN a single scenario_id, not across different scenarios. Cause: for a given scenario, all 9 feature columns except drift_frequency are deterministic (same changed_attribute, same booleans, same magnitude), so two records from the same scenario are only 'duplicates' on this column set if they also happened to draw the same drift_frequency integer -- which is likely given the narrow synthetic ranges (e.g. Critical: 0-3, only 4 possible values, across ~20 records per scenario). This is an expected consequence of the small drift_frequency ranges documented in dataset_generator.py, not a generation bug: the underlying desired_state/actual_state JSON for each record is still distinct (different bucket names, CIDRs, account IDs, etc. -- see raw_records.json), only the 9-column ML feature view collapses. cross_scenario_duplicate_groups is empty here, confirming no two DIFFERENT scenarios are indistinguishable to the model."
+  },
+  "class_distribution": {
+    "counts": {
+      "Critical": 180,
+      "High": 175,
+      "Medium": 176,
+      "Low": 180
+    },
+    "percentages": {
+      "Critical": 25.32,
+      "High": 24.61,
+      "Medium": 24.75,
+      "Low": 25.32
+    },
+    "all_four_classes_present": true
+  },
+  "resource_type_distribution": {
+    "s3_bucket": 273,
+    "security_group": 288,
+    "iam_policy": 150
+  },
+  "scenario_distribution": {
+    "E1": 20,
+    "E2": 20,
+    "E3": 35,
+    "E4": 35,
+    "E5": 90,
+    "E6": 44,
+    "E7": 44,
+    "I1": 20,
+    "I2": 20,
+    "I3": 35,
+    "I4": 20,
+    "I5": 20,
+    "I6": 35,
+    "S1": 20,
+    "S2": 20,
+    "S3id": 35,
+    "S4": 20,
+    "S5": 44,
+    "S6": 44,
+    "S7": 90
+  },
+  "non_drift_control": {
+    "e5_record_count": 90,
+    "all_e5_records_have_zero_drift_and_low_risk": true
+  },
+  "feature_value_validity": {
+    "invalid_value_count": 0,
+    "invalid_values": [],
+    "passed": true
+  },
+  "state_drift_consistency": {
+    "records_checked": 711,
+    "mismatches_found": 0,
+    "mismatches": [],
+    "passed": true
+  },
+  "risk_label_rule_check": {
+    "records_checked": 711,
+    "total_mismatches": 44,
+    "agreement_rate_pct": 93.81,
+    "mismatches_by_scenario": {
+      "E7": 44
+    },
+    "explanation": "Mismatches indicate scenarios where the approved (human-defined) risk_label differs from what the simple 5-feature rule-of-thumb would predict. This is EXPECTED for scenario E7 (see risk_rule_check.py docstring): peer-security-group cross-references and IAM permissions-boundary/MFA removals produce the same coarse feature signature (privilege_change=True, change_magnitude=Medium) but were deliberately assigned different severities based on internal-vs-external blast radius, a distinction outside the current 5-feature rule. This is documented as a known dataset characteristic, not a bug -- and as an explicit limitation to carry into the ML milestone (the classifier will need to learn this distinction from resource_type/changed_attribute rather than from the rule-of-thumb fields alone)."
+  },
+  "overall_passed": true
+}

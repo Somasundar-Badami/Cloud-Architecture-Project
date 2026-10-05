@@ -1,0 +1,458 @@
+{
+  "split_A_random_forest": [
+    {
+      "feature": "ordinal__security_sensitivity",
+      "importance": 0.27879490684444724
+    },
+    {
+      "feature": "ordinal__change_magnitude",
+      "importance": 0.18213969510288144
+    },
+    {
+      "feature": "passthrough__drift_frequency",
+      "importance": 0.06522285097713522
+    },
+    {
+      "feature": "ordinal__port_exposure",
+      "importance": 0.05420254325766266
+    },
+    {
+      "feature": "nominal__changed_attribute_lifecycle_rule",
+      "importance": 0.052188771026375556
+    },
+    {
+      "feature": "nominal__resource_type_iam_policy",
+      "importance": 0.04697307324725514
+    },
+    {
+      "feature": "nominal__changed_attribute_none",
+      "importance": 0.036715539337151853
+    },
+    {
+      "feature": "passthrough__public_exposure",
+      "importance": 0.03627735216875116
+    },
+    {
+      "feature": "nominal__changed_attribute_outbound_default.destination_cidr",
+      "importance": 0.029012839777722402
+    },
+    {
+      "feature": "nominal__changed_attribute_encryption.enabled",
+      "importance": 0.023852056449987506
+    },
+    {
+      "feature": "nominal__resource_type_security_group",
+      "importance": 0.020019758609594936
+    },
+    {
+      "feature": "nominal__changed_attribute_versioning",
+      "importance": 0.019942286771497793
+    },
+    {
+      "feature": "passthrough__privilege_change",
+      "importance": 0.019405561487451848
+    },
+    {
+      "feature": "passthrough__encryption_change",
+      "importance": 0.018604186505367375
+    },
+    {
+      "feature": "nominal__resource_type_s3_bucket",
+      "importance": 0.017801150210048303
+    },
+    {
+      "feature": "nominal__changed_attribute_logging",
+      "importance": 0.016724673806221824
+    },
+    {
+      "feature": "nominal__changed_attribute_requires_mfa",
+      "importance": 0.01579853561982613
+    },
+    {
+      "feature": "nominal__changed_attribute_peer_sg_reference",
+      "importance": 0.014701084366779554
+    },
+    {
+      "feature": "nominal__changed_attribute_internal_service_port.range",
+      "importance": 0.013820075849173627
+    },
+    {
+      "feature": "nominal__changed_attribute_permissions_boundary",
+      "importance": 0.011376813998467386
+    },
+    {
+      "feature": "nominal__changed_attribute_inbound_custom",
+      "importance": 0.010691687331772273
+    },
+    {
+      "feature": "nominal__changed_attribute_inbound_rdp.source_cidr",
+      "importance": 0.004652473918995199
+    },
+    {
+      "feature": "nominal__changed_attribute_inbound_ssh.source_cidr",
+      "importance": 0.004621484146085047
+    },
+    {
+      "feature": "nominal__changed_attribute_effect",
+      "importance": 0.0015004211681712378
+    },
+    {
+      "feature": "nominal__changed_attribute_trust_principal",
+      "importance": 0.0013200607546793063
+    },
+    {
+      "feature": "nominal__changed_attribute_bucket_policy_principal",
+      "importance": 0.0009231105106465409
+    },
+    {
+      "feature": "nominal__changed_attribute_block_public_access",
+      "importance": 0.0008470626138277818
+    },
+    {
+      "feature": "nominal__changed_attribute_actions+resources",
+      "importance": 0.0007916273514302504
+    },
+    {
+      "feature": "nominal__changed_attribute_acl",
+      "importance": 0.0006454599860864526
+    },
+    {
+      "feature": "nominal__changed_attribute_group_membership",
+      "importance": 0.00043285680450699224
+    }
+  ],
+  "split_A_decision_tree": [
+    {
+      "feature": "ordinal__security_sensitivity",
+      "importance": 0.33647840332590534
+    },
+    {
+      "feature": "ordinal__change_magnitude",
+      "importance": 0.2577314484999342
+    },
+    {
+      "feature": "nominal__changed_attribute_outbound_default.destination_cidr",
+      "importance": 0.11656914566126536
+    },
+    {
+      "feature": "nominal__resource_type_iam_policy",
+      "importance": 0.10871331135435246
+    },
+    {
+      "feature": "ordinal__port_exposure",
+      "importance": 0.09275073979080575
+    },
+    {
+      "feature": "nominal__changed_attribute_encryption.enabled",
+      "importance": 0.08775695136773687
+    },
+    {
+      "feature": "nominal__resource_type_s3_bucket",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__resource_type_security_group",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_acl",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_actions+resources",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_block_public_access",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_bucket_policy_principal",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_effect",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_group_membership",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_inbound_custom",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_inbound_rdp.source_cidr",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_inbound_ssh.source_cidr",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_internal_service_port.range",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_lifecycle_rule",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_logging",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_none",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_peer_sg_reference",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_permissions_boundary",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_requires_mfa",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_trust_principal",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_versioning",
+      "importance": 0.0
+    },
+    {
+      "feature": "passthrough__public_exposure",
+      "importance": 0.0
+    },
+    {
+      "feature": "passthrough__encryption_change",
+      "importance": 0.0
+    },
+    {
+      "feature": "passthrough__privilege_change",
+      "importance": 0.0
+    },
+    {
+      "feature": "passthrough__drift_frequency",
+      "importance": 0.0
+    }
+  ],
+  "split_B_random_forest": [
+    {
+      "feature": "ordinal__security_sensitivity",
+      "importance": 0.24613412992047387
+    },
+    {
+      "feature": "ordinal__change_magnitude",
+      "importance": 0.19442957547371492
+    },
+    {
+      "feature": "ordinal__port_exposure",
+      "importance": 0.09110186667431039
+    },
+    {
+      "feature": "passthrough__drift_frequency",
+      "importance": 0.051100233681421685
+    },
+    {
+      "feature": "nominal__resource_type_iam_policy",
+      "importance": 0.04734783343504996
+    },
+    {
+      "feature": "nominal__changed_attribute_lifecycle_rule",
+      "importance": 0.0457658050829862
+    },
+    {
+      "feature": "passthrough__public_exposure",
+      "importance": 0.04467332143457669
+    },
+    {
+      "feature": "nominal__resource_type_security_group",
+      "importance": 0.037547067431377396
+    },
+    {
+      "feature": "nominal__changed_attribute_logging",
+      "importance": 0.03710124694567038
+    },
+    {
+      "feature": "passthrough__privilege_change",
+      "importance": 0.035159090156492406
+    },
+    {
+      "feature": "nominal__changed_attribute_none",
+      "importance": 0.033637930879463186
+    },
+    {
+      "feature": "nominal__changed_attribute_internal_service_port.range",
+      "importance": 0.02475059859455179
+    },
+    {
+      "feature": "nominal__changed_attribute_peer_sg_reference",
+      "importance": 0.02371258059963909
+    },
+    {
+      "feature": "nominal__changed_attribute_outbound_default.destination_cidr",
+      "importance": 0.017847217761238186
+    },
+    {
+      "feature": "nominal__changed_attribute_permissions_boundary",
+      "importance": 0.01780925660106362
+    },
+    {
+      "feature": "nominal__resource_type_s3_bucket",
+      "importance": 0.017113936479889943
+    },
+    {
+      "feature": "nominal__changed_attribute_inbound_custom",
+      "importance": 0.015491793094872187
+    },
+    {
+      "feature": "nominal__changed_attribute_requires_mfa",
+      "importance": 0.014849865715560984
+    },
+    {
+      "feature": "nominal__changed_attribute_group_membership",
+      "importance": 0.0008530999371440235
+    },
+    {
+      "feature": "nominal__changed_attribute_effect",
+      "importance": 0.0008515403062788166
+    },
+    {
+      "feature": "nominal__changed_attribute_trust_principal",
+      "importance": 0.0007909905205077382
+    },
+    {
+      "feature": "nominal__changed_attribute_block_public_access",
+      "importance": 0.0007574374121188434
+    },
+    {
+      "feature": "nominal__changed_attribute_actions+resources",
+      "importance": 0.0006638149880493929
+    },
+    {
+      "feature": "nominal__changed_attribute_acl",
+      "importance": 0.00035071804643537873
+    },
+    {
+      "feature": "nominal__changed_attribute_bucket_policy_principal",
+      "importance": 0.00015904882711271028
+    },
+    {
+      "feature": "passthrough__encryption_change",
+      "importance": 0.0
+    }
+  ],
+  "split_B_decision_tree": [
+    {
+      "feature": "ordinal__security_sensitivity",
+      "importance": 0.6923104615163079
+    },
+    {
+      "feature": "nominal__resource_type_iam_policy",
+      "importance": 0.20715731303852541
+    },
+    {
+      "feature": "ordinal__port_exposure",
+      "importance": 0.10053222544516671
+    },
+    {
+      "feature": "ordinal__change_magnitude",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__resource_type_s3_bucket",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__resource_type_security_group",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_acl",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_actions+resources",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_block_public_access",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_bucket_policy_principal",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_effect",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_group_membership",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_inbound_custom",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_internal_service_port.range",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_lifecycle_rule",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_logging",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_none",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_outbound_default.destination_cidr",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_peer_sg_reference",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_permissions_boundary",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_requires_mfa",
+      "importance": 0.0
+    },
+    {
+      "feature": "nominal__changed_attribute_trust_principal",
+      "importance": 0.0
+    },
+    {
+      "feature": "passthrough__public_exposure",
+      "importance": 0.0
+    },
+    {
+      "feature": "passthrough__encryption_change",
+      "importance": 0.0
+    },
+    {
+      "feature": "passthrough__privilege_change",
+      "importance": 0.0
+    },
+    {
+      "feature": "passthrough__drift_frequency",
+      "importance": 0.0
+    }
+  ]
+}

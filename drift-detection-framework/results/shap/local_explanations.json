@@ -1,0 +1,1163 @@
+{
+  "selection_diagnostics": {
+    "primary_model_full_dataset_mismatches": 0,
+    "primary_model_split_A_test_accuracy": 1.0,
+    "note": "primary_model_full_dataset_mismatches confirms, rather than assumes, that the primary (Split A) model has no genuine misclassification anywhere in the dataset to use as the 'incorrectly classified' example -- hence the documented substitution of the secondary (Split B) model for that one case only."
+  },
+  "critical_security_group_public_exposure": {
+    "row_index": 273,
+    "scenario_id": "E1",
+    "actual_label": "Critical",
+    "predicted_label": "Critical",
+    "prediction_correct": true,
+    "prediction_probabilities": {
+      "Low": 0.0,
+      "Medium": 0.0,
+      "High": 0.0,
+      "Critical": 1.0
+    },
+    "shap_values_correspond_to_class": "Critical",
+    "additivity_check": {
+      "max_abs_diff_from_predict_proba": 2.220446049250313e-16,
+      "additivity_holds": true,
+      "tolerance_used": 1e-06
+    },
+    "top_positive_contributors": [
+      {
+        "feature": "ordinal__change_magnitude",
+        "shap_value": 0.22909682558059768
+      },
+      {
+        "feature": "ordinal__security_sensitivity",
+        "shap_value": 0.22448965558396214
+      },
+      {
+        "feature": "passthrough__drift_frequency",
+        "shap_value": 0.09447829876034364
+      },
+      {
+        "feature": "passthrough__public_exposure",
+        "shap_value": 0.07378146484777587
+      },
+      {
+        "feature": "nominal__changed_attribute_outbound_default.destination_cidr",
+        "shap_value": 0.055189179976921736
+      }
+    ],
+    "top_negative_contributors": [
+      {
+        "feature": "passthrough__privilege_change",
+        "shap_value": -0.011153961581425368
+      },
+      {
+        "feature": "nominal__resource_type_security_group",
+        "shap_value": -0.010015952170881973
+      },
+      {
+        "feature": "nominal__resource_type_iam_policy",
+        "shap_value": -0.009125763511188115
+      },
+      {
+        "feature": "nominal__changed_attribute_inbound_rdp.source_cidr",
+        "shap_value": -0.004087567578429838
+      },
+      {
+        "feature": "nominal__resource_type_s3_bucket",
+        "shap_value": -0.0011938648558930097
+      }
+    ],
+    "all_shap_values_for_predicted_class": [
+      {
+        "feature": "ordinal__security_sensitivity",
+        "shap_value": 0.22448965558396214
+      },
+      {
+        "feature": "ordinal__change_magnitude",
+        "shap_value": 0.22909682558059768
+      },
+      {
+        "feature": "ordinal__port_exposure",
+        "shap_value": 0.0005102784279668777
+      },
+      {
+        "feature": "nominal__resource_type_iam_policy",
+        "shap_value": -0.009125763511188115
+      },
+      {
+        "feature": "nominal__resource_type_s3_bucket",
+        "shap_value": -0.0011938648558930097
+      },
+      {
+        "feature": "nominal__resource_type_security_group",
+        "shap_value": -0.010015952170881973
+      },
+      {
+        "feature": "nominal__changed_attribute_acl",
+        "shap_value": -0.00045149591272879527
+      },
+      {
+        "feature": "nominal__changed_attribute_actions+resources",
+        "shap_value": -0.0003045868854222816
+      },
+      {
+        "feature": "nominal__changed_attribute_block_public_access",
+        "shap_value": -0.00046309033944111344
+      },
+      {
+        "feature": "nominal__changed_attribute_bucket_policy_principal",
+        "shap_value": -0.0006262308031388421
+      },
+      {
+        "feature": "nominal__changed_attribute_effect",
+        "shap_value": -0.0006214391057409399
+      },
+      {
+        "feature": "nominal__changed_attribute_encryption.enabled",
+        "shap_value": 0.011238807888840192
+      },
+      {
+        "feature": "nominal__changed_attribute_group_membership",
+        "shap_value": -0.00031508752218604953
+      },
+      {
+        "feature": "nominal__changed_attribute_inbound_custom",
+        "shap_value": 0.0054888831916794405
+      },
+      {
+        "feature": "nominal__changed_attribute_inbound_rdp.source_cidr",
+        "shap_value": -0.004087567578429838
+      },
+      {
+        "feature": "nominal__changed_attribute_inbound_ssh.source_cidr",
+        "shap_value": 0.034574224042071916
+      },
+      {
+        "feature": "nominal__changed_attribute_internal_service_port.range",
+        "shap_value": 0.003339639846962448
+      },
+      {
+        "feature": "nominal__changed_attribute_lifecycle_rule",
+        "shap_value": 0.013799070282915696
+      },
+      {
+        "feature": "nominal__changed_attribute_logging",
+        "shap_value": 0.003928866642894308
+      },
+      {
+        "feature": "nominal__changed_attribute_none",
+        "shap_value": 0.011416873004866136
+      },
+      {
+        "feature": "nominal__changed_attribute_outbound_default.destination_cidr",
+        "shap_value": 0.055189179976921736
+      },
+      {
+        "feature": "nominal__changed_attribute_peer_sg_reference",
+        "shap_value": 0.002798081873251498
+      },
+      {
+        "feature": "nominal__changed_attribute_permissions_boundary",
+        "shap_value": 0.0031547165883253295
+      },
+      {
+        "feature": "nominal__changed_attribute_requires_mfa",
+        "shap_value": 0.0030800825170820357
+      },
+      {
+        "feature": "nominal__changed_attribute_trust_principal",
+        "shap_value": -0.0005651156282522
+      },
+      {
+        "feature": "nominal__changed_attribute_versioning",
+        "shap_value": 0.005164133191360535
+      },
+      {
+        "feature": "passthrough__public_exposure",
+        "shap_value": 0.07378146484777587
+      },
+      {
+        "feature": "passthrough__encryption_change",
+        "shap_value": 0.0071010595624039505
+      },
+      {
+        "feature": "passthrough__privilege_change",
+        "shap_value": -0.011153961581425368
+      },
+      {
+        "feature": "passthrough__drift_frequency",
+        "shap_value": 0.09447829876034364
+      }
+    ],
+    "original_feature_values": {
+      "resource_type": "security_group",
+      "changed_attribute": "inbound_ssh.source_cidr",
+      "security_sensitivity": "High",
+      "public_exposure": true,
+      "encryption_change": false,
+      "privilege_change": false,
+      "port_exposure": "0.0.0.0/0",
+      "change_magnitude": "High",
+      "drift_frequency": 2
+    },
+    "model_used": "random_forest_primary",
+    "source": "primary_model_full_dataset"
+  },
+  "high_iam_privilege_change": {
+    "row_index": 601,
+    "scenario_id": "I3",
+    "actual_label": "High",
+    "predicted_label": "High",
+    "prediction_correct": true,
+    "prediction_probabilities": {
+      "Low": 0.0,
+      "Medium": 0.0,
+      "High": 1.0,
+      "Critical": 0.0
+    },
+    "shap_values_correspond_to_class": "High",
+    "additivity_check": {
+      "max_abs_diff_from_predict_proba": 2.220446049250313e-16,
+      "additivity_holds": true,
+      "tolerance_used": 1e-06
+    },
+    "top_positive_contributors": [
+      {
+        "feature": "nominal__resource_type_iam_policy",
+        "shap_value": 0.16670755350641733
+      },
+      {
+        "feature": "ordinal__change_magnitude",
+        "shap_value": 0.1573160641976388
+      },
+      {
+        "feature": "ordinal__security_sensitivity",
+        "shap_value": 0.13525363623991385
+      },
+      {
+        "feature": "nominal__changed_attribute_requires_mfa",
+        "shap_value": 0.08212975155794135
+      },
+      {
+        "feature": "passthrough__privilege_change",
+        "shap_value": 0.04190131323920966
+      }
+    ],
+    "top_negative_contributors": [
+      {
+        "feature": "passthrough__public_exposure",
+        "shap_value": -0.00918366671163756
+      },
+      {
+        "feature": "nominal__changed_attribute_encryption.enabled",
+        "shap_value": -0.008617725209342604
+      },
+      {
+        "feature": "nominal__changed_attribute_outbound_default.destination_cidr",
+        "shap_value": -0.008396133582870545
+      },
+      {
+        "feature": "passthrough__encryption_change",
+        "shap_value": -0.00746784621794642
+      },
+      {
+        "feature": "nominal__changed_attribute_permissions_boundary",
+        "shap_value": -0.006538796120646206
+      }
+    ],
+    "all_shap_values_for_predicted_class": [
+      {
+        "feature": "ordinal__security_sensitivity",
+        "shap_value": 0.13525363623991385
+      },
+      {
+        "feature": "ordinal__change_magnitude",
+        "shap_value": 0.1573160641976388
+      },
+      {
+        "feature": "ordinal__port_exposure",
+        "shap_value": 0.013860265178007153
+      },
+      {
+        "feature": "nominal__resource_type_iam_policy",
+        "shap_value": 0.16670755350641733
+      },
+      {
+        "feature": "nominal__resource_type_s3_bucket",
+        "shap_value": 0.02444777256672362
+      },
+      {
+        "feature": "nominal__resource_type_security_group",
+        "shap_value": 0.034220738519950646
+      },
+      {
+        "feature": "nominal__changed_attribute_acl",
+        "shap_value": 0.00021831365673111237
+      },
+      {
+        "feature": "nominal__changed_attribute_actions+resources",
+        "shap_value": 0.0022295003813729473
+      },
+      {
+        "feature": "nominal__changed_attribute_block_public_access",
+        "shap_value": 0.0003132093512284867
+      },
+      {
+        "feature": "nominal__changed_attribute_bucket_policy_principal",
+        "shap_value": 0.00039424726742915735
+      },
+      {
+        "feature": "nominal__changed_attribute_effect",
+        "shap_value": 0.0033163797803940276
+      },
+      {
+        "feature": "nominal__changed_attribute_encryption.enabled",
+        "shap_value": -0.008617725209342604
+      },
+      {
+        "feature": "nominal__changed_attribute_group_membership",
+        "shap_value": 0.0007844213589725086
+      },
+      {
+        "feature": "nominal__changed_attribute_inbound_custom",
+        "shap_value": -0.004780003926759289
+      },
+      {
+        "feature": "nominal__changed_attribute_inbound_rdp.source_cidr",
+        "shap_value": 0.00122685642939832
+      },
+      {
+        "feature": "nominal__changed_attribute_inbound_ssh.source_cidr",
+        "shap_value": 0.0015127200078802986
+      },
+      {
+        "feature": "nominal__changed_attribute_internal_service_port.range",
+        "shap_value": 0.012567562347461576
+      },
+      {
+        "feature": "nominal__changed_attribute_lifecycle_rule",
+        "shap_value": 0.02386971075073598
+      },
+      {
+        "feature": "nominal__changed_attribute_logging",
+        "shap_value": 0.009962233862916123
+      },
+      {
+        "feature": "nominal__changed_attribute_none",
+        "shap_value": 0.018694460612165963
+      },
+      {
+        "feature": "nominal__changed_attribute_outbound_default.destination_cidr",
+        "shap_value": -0.008396133582870545
+      },
+      {
+        "feature": "nominal__changed_attribute_peer_sg_reference",
+        "shap_value": 0.016329617434760416
+      },
+      {
+        "feature": "nominal__changed_attribute_permissions_boundary",
+        "shap_value": -0.006538796120646206
+      },
+      {
+        "feature": "nominal__changed_attribute_requires_mfa",
+        "shap_value": 0.08212975155794135
+      },
+      {
+        "feature": "nominal__changed_attribute_trust_principal",
+        "shap_value": 0.001641057100033348
+      },
+      {
+        "feature": "nominal__changed_attribute_versioning",
+        "shap_value": 0.010105533342350304
+      },
+      {
+        "feature": "passthrough__public_exposure",
+        "shap_value": -0.00918366671163756
+      },
+      {
+        "feature": "passthrough__encryption_change",
+        "shap_value": -0.00746784621794642
+      },
+      {
+        "feature": "passthrough__privilege_change",
+        "shap_value": 0.04190131323920966
+      },
+      {
+        "feature": "passthrough__drift_frequency",
+        "shap_value": 0.04014498547393588
+      }
+    ],
+    "original_feature_values": {
+      "resource_type": "iam_policy",
+      "changed_attribute": "requires_mfa",
+      "security_sensitivity": "Medium",
+      "public_exposure": false,
+      "encryption_change": false,
+      "privilege_change": true,
+      "port_exposure": "none",
+      "change_magnitude": "Medium",
+      "drift_frequency": 4
+    },
+    "model_used": "random_forest_primary",
+    "source": "primary_model_full_dataset"
+  },
+  "medium_e7_case": {
+    "row_index": 517,
+    "scenario_id": "E7",
+    "actual_label": "Medium",
+    "predicted_label": "Medium",
+    "prediction_correct": true,
+    "prediction_probabilities": {
+      "Low": 0.0,
+      "Medium": 1.0,
+      "High": 0.0,
+      "Critical": 0.0
+    },
+    "shap_values_correspond_to_class": "Medium",
+    "additivity_check": {
+      "max_abs_diff_from_predict_proba": 2.220446049250313e-16,
+      "additivity_holds": true,
+      "tolerance_used": 1e-06
+    },
+    "top_positive_contributors": [
+      {
+        "feature": "ordinal__security_sensitivity",
+        "shap_value": 0.1653024557443676
+      },
+      {
+        "feature": "ordinal__change_magnitude",
+        "shap_value": 0.10763945890912063
+      },
+      {
+        "feature": "ordinal__port_exposure",
+        "shap_value": 0.09619845274243387
+      },
+      {
+        "feature": "nominal__changed_attribute_peer_sg_reference",
+        "shap_value": 0.08282060584565148
+      },
+      {
+        "feature": "nominal__resource_type_iam_policy",
+        "shap_value": 0.060996681564532904
+      }
+    ],
+    "top_negative_contributors": [
+      {
+        "feature": "nominal__changed_attribute_internal_service_port.range",
+        "shap_value": -0.008579063326810235
+      },
+      {
+        "feature": "nominal__changed_attribute_versioning",
+        "shap_value": -0.008566704381804612
+      },
+      {
+        "feature": "nominal__changed_attribute_logging",
+        "shap_value": -0.007454039438934965
+      },
+      {
+        "feature": "nominal__resource_type_s3_bucket",
+        "shap_value": -0.005554885495578293
+      },
+      {
+        "feature": "passthrough__privilege_change",
+        "shap_value": -0.0003817281785406892
+      }
+    ],
+    "all_shap_values_for_predicted_class": [
+      {
+        "feature": "ordinal__security_sensitivity",
+        "shap_value": 0.1653024557443676
+      },
+      {
+        "feature": "ordinal__change_magnitude",
+        "shap_value": 0.10763945890912063
+      },
+      {
+        "feature": "ordinal__port_exposure",
+        "shap_value": 0.09619845274243387
+      },
+      {
+        "feature": "nominal__resource_type_iam_policy",
+        "shap_value": 0.060996681564532904
+      },
+      {
+        "feature": "nominal__resource_type_s3_bucket",
+        "shap_value": -0.005554885495578293
+      },
+      {
+        "feature": "nominal__resource_type_security_group",
+        "shap_value": 0.038772879933436415
+      },
+      {
+        "feature": "nominal__changed_attribute_acl",
+        "shap_value": 0.00010125768470747377
+      },
+      {
+        "feature": "nominal__changed_attribute_actions+resources",
+        "shap_value": 0.0
+      },
+      {
+        "feature": "nominal__changed_attribute_block_public_access",
+        "shap_value": 0.00047261089439460936
+      },
+      {
+        "feature": "nominal__changed_attribute_bucket_policy_principal",
+        "shap_value": 0.000555250529275427
+      },
+      {
+        "feature": "nominal__changed_attribute_effect",
+        "shap_value": 0.0002796361433298091
+      },
+      {
+        "feature": "nominal__changed_attribute_encryption.enabled",
+        "shap_value": 0.011255641793872671
+      },
+      {
+        "feature": "nominal__changed_attribute_group_membership",
+        "shap_value": 4.656120349617979e-05
+      },
+      {
+        "feature": "nominal__changed_attribute_inbound_custom",
+        "shap_value": 0.009314946724384762
+      },
+      {
+        "feature": "nominal__changed_attribute_inbound_rdp.source_cidr",
+        "shap_value": 7.259718752950532e-05
+      },
+      {
+        "feature": "nominal__changed_attribute_inbound_ssh.source_cidr",
+        "shap_value": 0.0002510086592825681
+      },
+      {
+        "feature": "nominal__changed_attribute_internal_service_port.range",
+        "shap_value": -0.008579063326810235
+      },
+      {
+        "feature": "nominal__changed_attribute_lifecycle_rule",
+        "shap_value": 0.03266289264398776
+      },
+      {
+        "feature": "nominal__changed_attribute_logging",
+        "shap_value": -0.007454039438934965
+      },
+      {
+        "feature": "nominal__changed_attribute_none",
+        "shap_value": 0.03021603383563688
+      },
+      {
+        "feature": "nominal__changed_attribute_outbound_default.destination_cidr",
+        "shap_value": 0.006111194662865436
+      },
+      {
+        "feature": "nominal__changed_attribute_peer_sg_reference",
+        "shap_value": 0.08282060584565148
+      },
+      {
+        "feature": "nominal__changed_attribute_permissions_boundary",
+        "shap_value": 0.01099235712667343
+      },
+      {
+        "feature": "nominal__changed_attribute_requires_mfa",
+        "shap_value": 0.016176949493929463
+      },
+      {
+        "feature": "nominal__changed_attribute_trust_principal",
+        "shap_value": 0.00041695374253575534
+      },
+      {
+        "feature": "nominal__changed_attribute_versioning",
+        "shap_value": -0.008566704381804612
+      },
+      {
+        "feature": "passthrough__public_exposure",
+        "shap_value": 0.048333726998024046
+      },
+      {
+        "feature": "passthrough__encryption_change",
+        "shap_value": 0.009496134686207776
+      },
+      {
+        "feature": "passthrough__privilege_change",
+        "shap_value": -0.0003817281785406892
+      },
+      {
+        "feature": "passthrough__drift_frequency",
+        "shap_value": 0.05627548418466842
+      }
+    ],
+    "original_feature_values": {
+      "resource_type": "security_group",
+      "changed_attribute": "peer_sg_reference",
+      "security_sensitivity": "Medium",
+      "public_exposure": false,
+      "encryption_change": false,
+      "privilege_change": true,
+      "port_exposure": "internal",
+      "change_magnitude": "Medium",
+      "drift_frequency": 7
+    },
+    "model_used": "random_forest_primary",
+    "source": "primary_model_full_dataset"
+  },
+  "low_e5_no_drift_control": {
+    "row_index": 383,
+    "scenario_id": "E5",
+    "actual_label": "Low",
+    "predicted_label": "Low",
+    "prediction_correct": true,
+    "prediction_probabilities": {
+      "Low": 1.0,
+      "Medium": 0.0,
+      "High": 0.0,
+      "Critical": 0.0
+    },
+    "shap_values_correspond_to_class": "Low",
+    "additivity_check": {
+      "max_abs_diff_from_predict_proba": 2.220446049250313e-16,
+      "additivity_holds": true,
+      "tolerance_used": 1e-06
+    },
+    "top_positive_contributors": [
+      {
+        "feature": "ordinal__security_sensitivity",
+        "shap_value": 0.32771038008242015
+      },
+      {
+        "feature": "nominal__changed_attribute_none",
+        "shap_value": 0.13685243567042996
+      },
+      {
+        "feature": "ordinal__change_magnitude",
+        "shap_value": 0.11962055149905267
+      },
+      {
+        "feature": "passthrough__drift_frequency",
+        "shap_value": 0.05329021346918149
+      },
+      {
+        "feature": "ordinal__port_exposure",
+        "shap_value": 0.023515159788164552
+      }
+    ],
+    "top_negative_contributors": [
+      {
+        "feature": "nominal__changed_attribute_lifecycle_rule",
+        "shap_value": -0.023886300691891696
+      }
+    ],
+    "all_shap_values_for_predicted_class": [
+      {
+        "feature": "ordinal__security_sensitivity",
+        "shap_value": 0.32771038008242015
+      },
+      {
+        "feature": "ordinal__change_magnitude",
+        "shap_value": 0.11962055149905267
+      },
+      {
+        "feature": "ordinal__port_exposure",
+        "shap_value": 0.023515159788164552
+      },
+      {
+        "feature": "nominal__resource_type_iam_policy",
+        "shap_value": 0.017764910901762652
+      },
+      {
+        "feature": "nominal__resource_type_s3_bucket",
+        "shap_value": 0.00666538658930897
+      },
+      {
+        "feature": "nominal__resource_type_security_group",
+        "shap_value": 0.015845206708801407
+      },
+      {
+        "feature": "nominal__changed_attribute_acl",
+        "shap_value": 0.0
+      },
+      {
+        "feature": "nominal__changed_attribute_actions+resources",
+        "shap_value": 0.0
+      },
+      {
+        "feature": "nominal__changed_attribute_block_public_access",
+        "shap_value": 0.0
+      },
+      {
+        "feature": "nominal__changed_attribute_bucket_policy_principal",
+        "shap_value": 0.00014325445224635424
+      },
+      {
+        "feature": "nominal__changed_attribute_effect",
+        "shap_value": 0.00015110007362944105
+      },
+      {
+        "feature": "nominal__changed_attribute_encryption.enabled",
+        "shap_value": 0.0024306714551863484
+      },
+      {
+        "feature": "nominal__changed_attribute_group_membership",
+        "shap_value": 0.0
+      },
+      {
+        "feature": "nominal__changed_attribute_inbound_custom",
+        "shap_value": 0.0008282537244335817
+      },
+      {
+        "feature": "nominal__changed_attribute_inbound_rdp.source_cidr",
+        "shap_value": 1.3252665439964065e-05
+      },
+      {
+        "feature": "nominal__changed_attribute_inbound_ssh.source_cidr",
+        "shap_value": 0.0002687150528402883
+      },
+      {
+        "feature": "nominal__changed_attribute_internal_service_port.range",
+        "shap_value": 0.004763640531591275
+      },
+      {
+        "feature": "nominal__changed_attribute_lifecycle_rule",
+        "shap_value": -0.023886300691891696
+      },
+      {
+        "feature": "nominal__changed_attribute_logging",
+        "shap_value": 0.008465007363694451
+      },
+      {
+        "feature": "nominal__changed_attribute_none",
+        "shap_value": 0.13685243567042996
+      },
+      {
+        "feature": "nominal__changed_attribute_outbound_default.destination_cidr",
+        "shap_value": 0.0013733532164372686
+      },
+      {
+        "feature": "nominal__changed_attribute_peer_sg_reference",
+        "shap_value": 0.0036690723603014005
+      },
+      {
+        "feature": "nominal__changed_attribute_permissions_boundary",
+        "shap_value": 0.0015820081051447423
+      },
+      {
+        "feature": "nominal__changed_attribute_requires_mfa",
+        "shap_value": 0.0022237848077939866
+      },
+      {
+        "feature": "nominal__changed_attribute_trust_principal",
+        "shap_value": 0.00017935498841362366
+      },
+      {
+        "feature": "nominal__changed_attribute_versioning",
+        "shap_value": 0.009267402934830995
+      },
+      {
+        "feature": "passthrough__public_exposure",
+        "shap_value": 0.017189580204165257
+      },
+      {
+        "feature": "passthrough__encryption_change",
+        "shap_value": 0.001979986754236303
+      },
+      {
+        "feature": "passthrough__privilege_change",
+        "shap_value": 0.015998546869849303
+      },
+      {
+        "feature": "passthrough__drift_frequency",
+        "shap_value": 0.05329021346918149
+      }
+    ],
+    "original_feature_values": {
+      "resource_type": "security_group",
+      "changed_attribute": "none",
+      "security_sensitivity": "Low",
+      "public_exposure": false,
+      "encryption_change": false,
+      "privilege_change": false,
+      "port_exposure": "none",
+      "change_magnitude": "None",
+      "drift_frequency": 8
+    },
+    "model_used": "random_forest_primary",
+    "source": "primary_model_full_dataset"
+  },
+  "correctly_classified": {
+    "row_index": 22,
+    "scenario_id": "S2",
+    "actual_label": "Critical",
+    "predicted_label": "Critical",
+    "prediction_correct": true,
+    "prediction_probabilities": {
+      "Low": 0.0,
+      "Medium": 0.0,
+      "High": 0.0,
+      "Critical": 1.0
+    },
+    "shap_values_correspond_to_class": "Critical",
+    "additivity_check": {
+      "max_abs_diff_from_predict_proba": 2.220446049250313e-16,
+      "additivity_holds": true,
+      "tolerance_used": 1e-06
+    },
+    "top_positive_contributors": [
+      {
+        "feature": "ordinal__change_magnitude",
+        "shap_value": 0.2515215418434618
+      },
+      {
+        "feature": "ordinal__security_sensitivity",
+        "shap_value": 0.20550088201558575
+      },
+      {
+        "feature": "passthrough__drift_frequency",
+        "shap_value": 0.09752538724767507
+      },
+      {
+        "feature": "passthrough__public_exposure",
+        "shap_value": 0.08155869906431913
+      },
+      {
+        "feature": "nominal__changed_attribute_outbound_default.destination_cidr",
+        "shap_value": 0.027134264742752434
+      }
+    ],
+    "top_negative_contributors": [
+      {
+        "feature": "passthrough__privilege_change",
+        "shap_value": -0.011446790181491494
+      },
+      {
+        "feature": "nominal__resource_type_iam_policy",
+        "shap_value": -0.00948539754242116
+      },
+      {
+        "feature": "nominal__changed_attribute_inbound_ssh.source_cidr",
+        "shap_value": -0.0023871737322323215
+      },
+      {
+        "feature": "nominal__changed_attribute_inbound_rdp.source_cidr",
+        "shap_value": -0.0022317442805012857
+      },
+      {
+        "feature": "nominal__changed_attribute_effect",
+        "shap_value": -0.000775526031636416
+      }
+    ],
+    "all_shap_values_for_predicted_class": [
+      {
+        "feature": "ordinal__security_sensitivity",
+        "shap_value": 0.20550088201558575
+      },
+      {
+        "feature": "ordinal__change_magnitude",
+        "shap_value": 0.2515215418434618
+      },
+      {
+        "feature": "ordinal__port_exposure",
+        "shap_value": 0.009109228851104472
+      },
+      {
+        "feature": "nominal__resource_type_iam_policy",
+        "shap_value": -0.00948539754242116
+      },
+      {
+        "feature": "nominal__resource_type_s3_bucket",
+        "shap_value": 0.00558639408040718
+      },
+      {
+        "feature": "nominal__resource_type_security_group",
+        "shap_value": 0.013072608258319973
+      },
+      {
+        "feature": "nominal__changed_attribute_acl",
+        "shap_value": 0.00552223738676548
+      },
+      {
+        "feature": "nominal__changed_attribute_actions+resources",
+        "shap_value": -0.00038244742409945424
+      },
+      {
+        "feature": "nominal__changed_attribute_block_public_access",
+        "shap_value": -0.0006320106229171541
+      },
+      {
+        "feature": "nominal__changed_attribute_bucket_policy_principal",
+        "shap_value": -0.0006670247134465331
+      },
+      {
+        "feature": "nominal__changed_attribute_effect",
+        "shap_value": -0.000775526031636416
+      },
+      {
+        "feature": "nominal__changed_attribute_encryption.enabled",
+        "shap_value": 0.013370872882920933
+      },
+      {
+        "feature": "nominal__changed_attribute_group_membership",
+        "shap_value": -0.0004034290893908172
+      },
+      {
+        "feature": "nominal__changed_attribute_inbound_custom",
+        "shap_value": 0.0026679390050592462
+      },
+      {
+        "feature": "nominal__changed_attribute_inbound_rdp.source_cidr",
+        "shap_value": -0.0022317442805012857
+      },
+      {
+        "feature": "nominal__changed_attribute_inbound_ssh.source_cidr",
+        "shap_value": -0.0023871737322323215
+      },
+      {
+        "feature": "nominal__changed_attribute_internal_service_port.range",
+        "shap_value": 0.003354548614264155
+      },
+      {
+        "feature": "nominal__changed_attribute_lifecycle_rule",
+        "shap_value": 0.014362015574747406
+      },
+      {
+        "feature": "nominal__changed_attribute_logging",
+        "shap_value": 0.004182545085983139
+      },
+      {
+        "feature": "nominal__changed_attribute_none",
+        "shap_value": 0.013181927154981475
+      },
+      {
+        "feature": "nominal__changed_attribute_outbound_default.destination_cidr",
+        "shap_value": 0.027134264742752434
+      },
+      {
+        "feature": "nominal__changed_attribute_peer_sg_reference",
+        "shap_value": 0.0028371138146350942
+      },
+      {
+        "feature": "nominal__changed_attribute_permissions_boundary",
+        "shap_value": 0.0032673775020078764
+      },
+      {
+        "feature": "nominal__changed_attribute_requires_mfa",
+        "shap_value": 0.003135787711291563
+      },
+      {
+        "feature": "nominal__changed_attribute_trust_principal",
+        "shap_value": -0.0005892811956919109
+      },
+      {
+        "feature": "nominal__changed_attribute_versioning",
+        "shap_value": 0.006042910614903276
+      },
+      {
+        "feature": "passthrough__public_exposure",
+        "shap_value": 0.08155869906431913
+      },
+      {
+        "feature": "passthrough__encryption_change",
+        "shap_value": 0.009772529278135956
+      },
+      {
+        "feature": "passthrough__privilege_change",
+        "shap_value": -0.011446790181491494
+      },
+      {
+        "feature": "passthrough__drift_frequency",
+        "shap_value": 0.09752538724767507
+      }
+    ],
+    "original_feature_values": {
+      "resource_type": "s3_bucket",
+      "changed_attribute": "acl",
+      "security_sensitivity": "High",
+      "public_exposure": true,
+      "encryption_change": false,
+      "privilege_change": false,
+      "port_exposure": "none",
+      "change_magnitude": "High",
+      "drift_frequency": 2
+    },
+    "model_used": "random_forest_primary",
+    "source": "split_A_test_set"
+  },
+  "incorrectly_classified": {
+    "row_index": 40,
+    "scenario_id": "S3id",
+    "actual_label": "High",
+    "predicted_label": "Critical",
+    "prediction_correct": false,
+    "prediction_probabilities": {
+      "Low": 0.085,
+      "Medium": 0.365,
+      "High": 0.11,
+      "Critical": 0.44
+    },
+    "shap_values_correspond_to_class": "Critical",
+    "additivity_check": {
+      "max_abs_diff_from_predict_proba": 1.249000902703301e-16,
+      "additivity_holds": true,
+      "tolerance_used": 1e-06
+    },
+    "top_positive_contributors": [
+      {
+        "feature": "ordinal__security_sensitivity",
+        "shap_value": 0.17595891302660882
+      },
+      {
+        "feature": "passthrough__drift_frequency",
+        "shap_value": 0.05825650924564493
+      },
+      {
+        "feature": "ordinal__port_exposure",
+        "shap_value": 0.03588826707392177
+      },
+      {
+        "feature": "nominal__resource_type_security_group",
+        "shap_value": 0.027295349534283392
+      },
+      {
+        "feature": "nominal__resource_type_s3_bucket",
+        "shap_value": 0.01717140943357189
+      }
+    ],
+    "top_negative_contributors": [
+      {
+        "feature": "ordinal__change_magnitude",
+        "shap_value": -0.11891100607908067
+      },
+      {
+        "feature": "passthrough__public_exposure",
+        "shap_value": -0.028409891180491115
+      },
+      {
+        "feature": "nominal__resource_type_iam_policy",
+        "shap_value": -0.013449933589194506
+      },
+      {
+        "feature": "passthrough__privilege_change",
+        "shap_value": -0.004761036893658757
+      },
+      {
+        "feature": "nominal__changed_attribute_effect",
+        "shap_value": -0.0008661380699309573
+      }
+    ],
+    "all_shap_values_for_predicted_class": [
+      {
+        "feature": "ordinal__security_sensitivity",
+        "shap_value": 0.17595891302660882
+      },
+      {
+        "feature": "ordinal__change_magnitude",
+        "shap_value": -0.11891100607908067
+      },
+      {
+        "feature": "ordinal__port_exposure",
+        "shap_value": 0.03588826707392177
+      },
+      {
+        "feature": "nominal__resource_type_iam_policy",
+        "shap_value": -0.013449933589194506
+      },
+      {
+        "feature": "nominal__resource_type_s3_bucket",
+        "shap_value": 0.01717140943357189
+      },
+      {
+        "feature": "nominal__resource_type_security_group",
+        "shap_value": 0.027295349534283392
+      },
+      {
+        "feature": "nominal__changed_attribute_acl",
+        "shap_value": -0.0005670283052136226
+      },
+      {
+        "feature": "nominal__changed_attribute_actions+resources",
+        "shap_value": -0.00038401164083529544
+      },
+      {
+        "feature": "nominal__changed_attribute_block_public_access",
+        "shap_value": -0.0003154469609558516
+      },
+      {
+        "feature": "nominal__changed_attribute_bucket_policy_principal",
+        "shap_value": -0.0003317966921311988
+      },
+      {
+        "feature": "nominal__changed_attribute_effect",
+        "shap_value": -0.0008661380699309573
+      },
+      {
+        "feature": "nominal__changed_attribute_group_membership",
+        "shap_value": -0.0004581317777371853
+      },
+      {
+        "feature": "nominal__changed_attribute_inbound_custom",
+        "shap_value": 0.0019355711935932283
+      },
+      {
+        "feature": "nominal__changed_attribute_internal_service_port.range",
+        "shap_value": 0.0050101180643162295
+      },
+      {
+        "feature": "nominal__changed_attribute_lifecycle_rule",
+        "shap_value": 0.015135517023830607
+      },
+      {
+        "feature": "nominal__changed_attribute_logging",
+        "shap_value": 0.005773940533180124
+      },
+      {
+        "feature": "nominal__changed_attribute_none",
+        "shap_value": 0.008779203665939359
+      },
+      {
+        "feature": "nominal__changed_attribute_outbound_default.destination_cidr",
+        "shap_value": 0.004870197369653857
+      },
+      {
+        "feature": "nominal__changed_attribute_peer_sg_reference",
+        "shap_value": 0.0040032885974279845
+      },
+      {
+        "feature": "nominal__changed_attribute_permissions_boundary",
+        "shap_value": 0.007424613177714235
+      },
+      {
+        "feature": "nominal__changed_attribute_requires_mfa",
+        "shap_value": 0.004430291239079526
+      },
+      {
+        "feature": "nominal__changed_attribute_trust_principal",
+        "shap_value": -0.0005057950165638142
+      },
+      {
+        "feature": "passthrough__public_exposure",
+        "shap_value": -0.028409891180491115
+      },
+      {
+        "feature": "passthrough__encryption_change",
+        "shap_value": 0.0
+      },
+      {
+        "feature": "passthrough__privilege_change",
+        "shap_value": -0.004761036893658757
+      },
+      {
+        "feature": "passthrough__drift_frequency",
+        "shap_value": 0.05825650924564493
+      }
+    ],
+    "original_feature_values": {
+      "resource_type": "s3_bucket",
+      "changed_attribute": "encryption.enabled",
+      "security_sensitivity": "High",
+      "public_exposure": false,
+      "encryption_change": true,
+      "privilege_change": false,
+      "port_exposure": "none",
+      "change_magnitude": "Medium",
+      "drift_frequency": 3
+    },
+    "model_used": "random_forest_secondary_scenario_split",
+    "source": "split_B_scenario_group_aware"
+  }
+}
