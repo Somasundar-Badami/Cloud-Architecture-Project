@@ -1,0 +1,15 @@
+# Never commit Terraform state (can contain sensitive attribute values),
+# local override files, or credential/variable files that might carry
+# secrets.
+*.tfstate
+*.tfstate.*
+.terraform/
+.terraform.lock.hcl
+*.tfvars
+*.tfvars.json
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
