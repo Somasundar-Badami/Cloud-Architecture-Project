@@ -8,3 +8,5 @@ streamlit>=1.64.0
 boto3>=1.43.0
 botocore>=1.43.0
 python-hcl2>=8.1.4
+# test-only: in-memory AWS for tests/test_drift_pipeline.py and dashboard/dev_server.py
+moto[s3,ec2,iam,dynamodb,sns,sqs]>=5.0.0

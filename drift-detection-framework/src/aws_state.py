@@ -26,6 +26,7 @@ partial result.
 """
 
 import json
+import urllib.parse
 
 import boto3
 import botocore.exceptions
@@ -202,3 +203,76 @@ def fetch_s3_bucket_raw_config(client, bucket_name):
             raise AWSConfigurationError(CATEGORY_OTHER, f"Error fetching bucket policy: {e}", e)
 
     return raw
+
+
+# ---------------------------------------------------------------------------
+# Phase 2: EC2 Security Group and IAM role collectors
+# ---------------------------------------------------------------------------
+
+def _raise_categorized(exc, what, not_found_codes, permission_hint):
+    if isinstance(exc, botocore.exceptions.NoCredentialsError):
+        raise AWSConfigurationError(CATEGORY_NO_CREDENTIALS, "No AWS credentials configured.", exc)
+    if isinstance(exc, botocore.exceptions.EndpointConnectionError):
+        raise AWSConfigurationError(CATEGORY_NETWORK_UNREACHABLE, f"Could not reach the AWS endpoint: {exc}", exc)
+    if isinstance(exc, botocore.exceptions.ClientError):
+        code = exc.response.get("Error", {}).get("Code", "Unknown")
+        if code in not_found_codes:
+            raise AWSConfigurationError(CATEGORY_NOT_FOUND, f"{what} does not exist or is not visible.", exc)
+        if code in ("AccessDenied", "AccessDeniedException", "UnauthorizedOperation"):
+            raise AWSConfigurationError(
+                CATEGORY_ACCESS_DENIED, f"Access denied reading {what}. Required permission: {permission_hint}.", exc
+            )
+    raise AWSConfigurationError(CATEGORY_OTHER, f"Unexpected error reading {what}: {exc}", exc)
+
+
+def fetch_security_group_raw_config(client, group_id):
+    """Returns the raw describe_security_groups() entry for one group."""
+    try:
+        resp = client.describe_security_groups(GroupIds=[group_id])
+    except Exception as e:
+        _raise_categorized(e, f"security group '{group_id}'",
+                           ("InvalidGroup.NotFound", "InvalidGroupId.Malformed"), "ec2:DescribeSecurityGroups")
+    groups = resp.get("SecurityGroups", [])
+    if not groups:
+        raise AWSConfigurationError(CATEGORY_NOT_FOUND, f"security group '{group_id}' does not exist or is not visible.")
+    return groups[0]
+
+
+def _decode_policy(document):
+    if isinstance(document, str):
+        return json.loads(urllib.parse.unquote(document))
+    return document
+
+
+def fetch_iam_role_raw_config(client, role_name, inline_policy_name):
+    """
+    Returns {"role": get_role()["Role"], "inline_policy": dict or None,
+    "attached_policy_arns": [...]}. A deleted inline policy is a normal,
+    detectable drift (None), not an error; a missing ROLE is an error.
+    """
+    what = f"IAM role '{role_name}'"
+    try:
+        role = client.get_role(RoleName=role_name)["Role"]
+    except Exception as e:
+        _raise_categorized(e, what, ("NoSuchEntity",), "iam:GetRole")
+
+    try:
+        inline_policy = client.get_role_policy(RoleName=role_name, PolicyName=inline_policy_name)["PolicyDocument"]
+    except botocore.exceptions.ClientError as e:
+        if _is_error_code(e, "NoSuchEntity"):
+            inline_policy = None
+        else:
+            _raise_categorized(e, f"inline policy '{inline_policy_name}' of {what}", (), "iam:GetRolePolicy")
+    # botocore normally decodes IAM policy documents into dicts; decode here
+    # too in case the raw URL-encoded wire string comes through.
+    inline_policy = _decode_policy(inline_policy)
+    role["AssumeRolePolicyDocument"] = _decode_policy(role.get("AssumeRolePolicyDocument"))
+
+    try:
+        attached = []
+        for page in client.get_paginator("list_attached_role_policies").paginate(RoleName=role_name):
+            attached.extend(p["PolicyArn"] for p in page["AttachedPolicies"])
+    except Exception as e:
+        _raise_categorized(e, f"attached policies of {what}", ("NoSuchEntity",), "iam:ListAttachedRolePolicies")
+
+    return {"role": role, "inline_policy": inline_policy, "attached_policy_arns": sorted(attached)}

@@ -20,3 +20,33 @@ variable "environment" {
   type        = string
   default     = "sandbox"
 }
+
+variable "alert_email" {
+  description = "Email address subscribed to High/Critical drift alerts (SNS). AWS sends a confirmation email that must be accepted. Empty = no subscription."
+  type        = string
+  default     = ""
+}
+
+variable "dashboard_user_email" {
+  description = "Email of the first dashboard user. Cognito emails a temporary password to it. Empty = create users later in the console."
+  type        = string
+  default     = ""
+}
+
+variable "scan_schedule" {
+  description = "EventBridge schedule expression for the drift scan."
+  type        = string
+  default     = "rate(1 hour)"
+}
+
+variable "enable_aws_config" {
+  description = "Also create an AWS Config recorder for the 3 monitored resource types and trigger a scan on every configuration change. Leave false if the account/region already has a Config recorder (only one is allowed)."
+  type        = bool
+  default     = false
+}
+
+variable "log_retention_days" {
+  description = "CloudWatch Logs retention for the Lambda functions."
+  type        = number
+  default     = 14
+}

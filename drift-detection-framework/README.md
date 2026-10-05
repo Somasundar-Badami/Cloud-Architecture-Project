@@ -1,8 +1,12 @@
-# AI-Based Infrastructure Drift Detection Framework — Dataset Generation Milestone
+# AI-Based Infrastructure Drift Detection Framework
 
-Synthetic dataset generator + drift detection engine + feature extraction
-pipeline for the drift-risk classification project, built per the frozen
-implementation specification.
+Drift detection engine, synthetic dataset, Random Forest risk classifier,
+SHAP explanations, Streamlit demo, and a deployable AWS pipeline (Lambda,
+DynamoDB, SNS, API Gateway, Cognito, CloudWatch, optional AWS Config),
+built per the frozen implementation specification.
+
+The milestones below are in the order they were built. For the AWS
+deployment, jump to **"AWS Deployment Milestone"** at the end.
 
 ## Project Structure
 
@@ -828,3 +832,211 @@ RUN_REAL_AWS_TESTS=1 AWS_TEST_BUCKET="$BUCKET_NAME" pytest tests/test_aws_state.
 
 Lambda, Cognito, DynamoDB, SNS, and automated remediation **not
 implemented** — next milestones.
+
+---
+
+## AWS Deployment Milestone (Phase 2 + full pipeline)
+
+Adds the two remaining monitored resource types and the AWS-native
+pipeline from the specification. **Does not modify** the dataset, the
+trained models, the preprocessors, `drift_engine.py`, or
+`feature_extraction.py`. The only edit to existing code: `import hcl2` in
+`aws_normalizer.py` is now imported inside the one function that needs it
+(that dependency is local-only and is not packaged into Lambda). Also
+`scikit-learn` is now pinned to `==1.8.0`, the version the saved models
+were trained with. Newer versions print `InconsistentVersionWarning` when
+loading them.
+
+### Architecture
+
+```
+terraform apply
+  ├─ monitored resources: S3 bucket (main.tf), Security Group + IAM role (monitored_resources.tf)
+  └─ desired-state document -> private S3 artifacts bucket (desired_state.tf)
+
+EventBridge schedule (hourly)  ─┐
+AWS Config change (optional)   ─┼─> Lambda "detector"
+Dashboard "Run scan now"       ─┘     boto3 read of S3 / EC2 / IAM   (aws_state.py)
+                                      normalize to project schema     (aws_normalizer.py)
+                                      detect_drift                    (drift_engine.py, unchanged)
+                                      extract_features                (feature_extraction.py, unchanged)
+                                      Random Forest + TreeSHAP        (portable_model.py)
+                                      ├─> DynamoDB  (every scan result)
+                                      ├─> SNS email (High/Critical, once per distinct drift)
+                                      └─> CloudWatch (logs, EMF metrics, alarms, dashboard)
+
+Browser dashboard (dashboard/index.html)
+  └─ Cognito sign-in -> API Gateway (JWT) -> Lambda "api" -> DynamoDB / detector / analyze
+```
+
+### Deviation from the frozen spec: no SageMaker endpoint (decide as a team)
+
+The spec puts inference on SageMaker. It runs inside Lambda instead,
+for two measured reasons:
+- scikit-learn + scipy + numpy + shap exceed Lambda's 250 MB package limit
+- a SageMaker real-time endpoint bills every hour it exists, even when idle
+
+The trained forest is small: 200 trees, 5,472 nodes in total.
+`src/portable_model.py` exports the **already-trained** Random Forest and
+fitted preprocessor to `models/portable_model.json` (316 KB). It evaluates
+them, plus exact path-dependent TreeSHAP (Lundberg et al. 2018,
+Algorithm 2, the algorithm `shap.TreeExplainer` uses), in pure Python.
+Nothing is retrained. `tests/test_portable_model.py` checks against the
+original artifacts:
+- preprocessing output identical on all 711 records
+- `predict_proba` identical on all 711 records (max difference 0.0)
+- SHAP values equal to `shap.TreeExplainer` within 1e-12 (observed ~3e-16, 2 records per scenario)
+- the committed JSON matches the joblib files by SHA-256, and a fresh export is identical
+
+If the report must use SageMaker, the same JSON can be served from a
+SageMaker endpoint later. The pipeline only calls `model.explain(features)`.
+
+### Phase 2 normalizers: real AWS -> the project's schema
+
+`aws_normalizer.normalize_sg_actual_state()` and
+`normalize_iam_role_actual_state()` map live API responses onto the same
+attribute names the 20 scenarios use. That way `feature_extraction.py`
+and the model see the same inputs they were built on. Simplifications are
+documented in the code. The main ones:
+
+- **Security Group:** rules are assigned to roles. `inbound_ssh` /
+  `inbound_rdp` / `inbound_https` take any rule covering port 22 / 3389 /
+  443, and a public CIDR wins. `internal_service_port` takes the internal
+  rule covering the declared service port. `inbound_custom` is any other
+  inbound rule. `outbound_default` and `peer_sg_reference` are as their
+  names say. `::/0` counts as public.
+- **IAM role:** one inline-policy statement (`Sid: PrimaryAccess`) gives
+  actions, resources, effect and the MFA condition. The trust policy gives
+  `trust_principal`. A role can't join an IAM group, so scenario I5's
+  analogue for a role is "AWS-managed `AdministratorAccess` attached":
+  `group_membership = "AdminGroup"`.
+
+`tests/test_aws_phase2.py` takes a real-world change (E1–E7; I1, I2, I3,
+I5, I6) expressed as the raw AWS response after that change. For each one
+it checks that:
+- the changed attribute and all 9 features equal those of the approved
+  scenario's own mutate function
+- the deployed model assigns the approved risk label
+
+I4 (Deny→Allow) has no counterpart on the deployed role, whose desired
+effect is already Allow. It is tested at the normalizer level instead.
+
+### Pipeline behaviour (all covered by `tests/test_drift_pipeline.py`, run against moto's in-memory AWS)
+
+| Situation | Result |
+|---|---|
+| Resources exactly as Terraform declared | `has_drift=false`, predicted Low, no alert |
+| S3 public access block removed (S1) | Critical, alert |
+| SSH opened to `0.0.0.0/0` (E1) | Critical, alert |
+| Permissions boundary removed (I6) | High, alert |
+| Same drift still present on the next scan | recorded, **not** re-alerted |
+| Drift history | `drift_frequency` = earlier drifted scans of that resource in the last 30 days (real history, not synthetic) |
+| Monitored resource deleted | `status=collection_error`, `has_drift=true`, CloudWatch alarm |
+| Change to an attribute with no knowledge-base rule (e.g. the intended 443 rule removed) | `status=unclassified_attribute`: stored and shown on the dashboard, **no** label guessed |
+
+Every DynamoDB record holds:
+- the raw changes (old/new values, as JSON)
+- the 9 features
+- class probabilities
+- the full 30-value SHAP vector for the predicted class, plus the top contributors
+- an additivity check value
+- the model SHA-256
+
+### Observed, not fixed: `drift_frequency` and the synthetic labels
+
+In the dataset, low `drift_frequency` values co-occur with Critical
+labels: Critical scenarios drew frequency from 0–3. In live SHAP output,
+`drift_frequency = 0` therefore *pushes toward Critical*. For example,
++0.116 on the E1 record. That is the model reproducing an artifact of the
+synthetic labels, not a security insight. It is shown on the dashboard
+and should be discussed in the report, not hidden.
+
+### Deploy (needs your own AWS credentials; nothing here creates them)
+
+```bash
+pip install -r requirements.txt
+python src/portable_model.py          # only if models/*.joblib ever change
+cd terraform
+terraform init
+terraform plan  -var "alert_email=you@example.com" -var "dashboard_user_email=you@example.com"
+terraform apply -var "alert_email=you@example.com" -var "dashboard_user_email=you@example.com"
+```
+
+- Confirm the SNS subscription email AWS sends you.
+- Cognito emails the dashboard user a temporary password.
+- `-var enable_aws_config=true` also creates an AWS Config recorder that
+  triggers a scan on every change. Only one recorder is allowed per
+  region, so leave it off if the account already has one.
+
+Open the dashboard. `terraform apply` writes `dashboard/config.js`, which
+is git-ignored.
+
+```bash
+cd ../dashboard
+python -m http.server 8000             # then open http://localhost:8000
+```
+
+### Demo: make real drift, watch it get classified
+
+```bash
+BUCKET=$(terraform output -raw bucket_name)
+SG=$(terraform output -raw security_group_id)
+ROLE=$(terraform output -raw iam_role_name)
+
+aws s3api delete-public-access-block --bucket "$BUCKET"                                  # S1 -> Critical
+aws ec2 authorize-security-group-ingress --group-id "$SG" --protocol tcp --port 22 --cidr 0.0.0.0/0   # E1 -> Critical
+aws iam delete-role-permissions-boundary --role-name "$ROLE"                             # I6 -> High
+
+aws lambda invoke --function-name "$(terraform output -raw detector_function_name)" out.json   # or "Run scan now"
+terraform apply      # restores the desired state; the next scan shows the resources back in sync
+```
+
+The security group is attached to nothing in an empty VPC, so opening SSH
+on it exposes nothing.
+
+### Cost (sandbox account, defaults)
+
+- Lambda, API Gateway, DynamoDB on-demand, SNS email, Cognito (a few
+  users), EventBridge and CloudWatch all stay within the free tier at
+  hourly scans of 3 resources.
+- S3: two tiny buckets.
+- The VPC and security group are free (no NAT gateway, no instances).
+- AWS Config (off by default) costs per recorded configuration item:
+  cents for this setup.
+- Remove everything with `terraform destroy`.
+
+### Local demo without AWS
+
+```bash
+python dashboard/dev_server.py         # http://localhost:8765, any email/password
+```
+
+This runs the **real** handlers against moto's in-memory AWS:
+1. builds the same resources
+2. scans once
+3. makes the S1 / E1 / I6 changes
+4. scans again
+5. serves the dashboard
+
+The page title is prefixed "LOCAL DEMO" so it can't be mistaken for the
+deployed system.
+
+### Verification status
+
+- `terraform validate`: passes (Terraform v1.16.4, AWS provider 5.x).
+  `terraform fmt` applied.
+- **Not yet run against a real AWS account.** No credentials were
+  available while this milestone was built. The first `terraform apply`
+  and its first scan are the real end-to-end check. That scan should
+  report all three resources **in sync**. If it reports drift on an
+  untouched resource, the desired-state document and the normalizer
+  disagree for that account, and that has to be fixed before the demo.
+
+### Tests
+
+76 new tests:
+- `test_portable_model.py`: 10
+- `test_aws_phase2.py`: 44
+- `test_drift_pipeline.py`: 22
+
+**Total project suite: 277 passed, 1 skipped** (the opt-in real-AWS test).

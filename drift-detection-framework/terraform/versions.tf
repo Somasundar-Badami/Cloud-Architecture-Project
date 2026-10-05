@@ -17,6 +17,14 @@ terraform {
       source  = "hashicorp/random"
       version = "~> 3.6"
     }
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.4"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = "~> 2.5"
+    }
   }
 }
 
@@ -26,4 +34,11 @@ provider "aws" {
   # from the environment (AWS_ACCESS_KEY_ID / AWS_SECRET_ACCESS_KEY /
   # AWS_SESSION_TOKEN), a shared ~/.aws/credentials profile, or an
   # attached IAM role -- whichever the operator has configured locally.
+
+  default_tags {
+    tags = {
+      Project   = "infrastructure-drift-detection-framework"
+      ManagedBy = "terraform"
+    }
+  }
 }

@@ -32,8 +32,6 @@ hidden):
 import os
 from typing import Any, Dict, List, Optional
 
-import hcl2
-
 PUBLIC_ACL_GROUP_URI = "http://acs.amazonaws.com/groups/global/AllUsers"
 
 
@@ -158,6 +156,8 @@ def load_terraform_resources(tf_dir: str) -> Dict[str, Dict[str, Any]]:
         {"<resource_type>.<resource_name>": {attrs...}}
     e.g. {"aws_s3_bucket_versioning.demo": {"status_from_versioning_configuration": "Disabled", ...}}
     """
+    import hcl2  # local-only dependency; not needed (or packaged) in AWS Lambda
+
     resources: Dict[str, Dict[str, Any]] = {}
     for filename in sorted(os.listdir(tf_dir)):
         if not filename.endswith(".tf"):
@@ -233,4 +233,189 @@ def derive_s3_desired_state_from_terraform(tf_dir: str, bucket_name: str) -> Dic
         "logging": logging,
         "lifecycle_rule": lifecycle_rule,
         "bucket_policy_principal": bucket_policy_principal,
+    }
+
+
+# ---------------------------------------------------------------------------
+# Phase 2: EC2 Security Group (describe_security_groups -> normalized schema)
+#
+# The normalized SG schema (scenario_definitions.sg_baseline) has one slot
+# per *role* a rule plays, not one entry per AWS rule. Real rules are
+# assigned to those slots as follows (documented simplifications):
+#   inbound_ssh / inbound_rdp / inbound_https -- any inbound rule whose port
+#       range covers 22 / 3389 / 443. If several CIDRs reach that port, a
+#       public one (0.0.0.0/0 or ::/0) wins, otherwise the lowest CIDR.
+#   internal_service_port -- the inbound rule from a NON-public CIDR that
+#       covers the declared internal service port (e.g. 5432); "range" is
+#       "single" if it covers exactly that port, else "<from>-<to>".
+#   inbound_custom -- any other inbound CIDR rule (public preferred), or None.
+#   outbound_default -- egress destination (public preferred), or None.
+#   peer_sg_reference -- lowest referenced source security group id, or None.
+# ---------------------------------------------------------------------------
+
+PUBLIC_CIDR = "0.0.0.0/0"
+_PUBLIC_CIDRS = {"0.0.0.0/0", "::/0"}
+_NAMED_PORTS = {22: "inbound_ssh", 3389: "inbound_rdp", 443: "inbound_https"}
+
+
+def _expand_permissions(permissions: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    """One entry per (port range, CIDR). Protocol -1 ("all traffic") covers
+    every port; IPv6 ::/0 is treated the same as 0.0.0.0/0."""
+    entries = []
+    for perm in permissions:
+        all_ports = perm.get("IpProtocol") == "-1" or "FromPort" not in perm
+        from_port = 0 if all_ports else perm["FromPort"]
+        to_port = 65535 if all_ports else perm["ToPort"]
+        cidrs = [r["CidrIp"] for r in perm.get("IpRanges", [])]
+        cidrs += [r["CidrIpv6"] for r in perm.get("Ipv6Ranges", [])]
+        for cidr in cidrs:
+            entries.append({
+                "from": from_port,
+                "to": to_port,
+                "all_ports": all_ports,
+                "cidr": PUBLIC_CIDR if cidr in _PUBLIC_CIDRS else cidr,
+            })
+    return entries
+
+
+def _pick_cidr(cidrs: List[str]) -> str:
+    return PUBLIC_CIDR if PUBLIC_CIDR in cidrs else sorted(cidrs)[0]
+
+
+def normalize_sg_actual_state(security_group: Dict[str, Any], instance_name: str,
+                              internal_service_port: int) -> Dict[str, Any]:
+    """
+    security_group: one element of ec2.describe_security_groups()["SecurityGroups"].
+    instance_name / internal_service_port: identity + intent from the desired
+    state (AWS has no notion of "the internal service port").
+    """
+    inbound = _expand_permissions(security_group.get("IpPermissions", []))
+    outbound = _expand_permissions(security_group.get("IpPermissionsEgress", []))
+    used = set()
+
+    state: Dict[str, Any] = {
+        "resource_type": "aws_security_group",
+        "sg_id": security_group["GroupId"],
+        "instance_name": instance_name,
+    }
+
+    for port, slot in _NAMED_PORTS.items():
+        covering = [i for i, e in enumerate(inbound) if e["from"] <= port <= e["to"]]
+        exact = [i for i in covering if inbound[i]["from"] == inbound[i]["to"] == port]
+        used.update(exact)
+        state[slot] = (
+            {"port": port, "source_cidr": _pick_cidr([inbound[i]["cidr"] for i in covering])}
+            if covering else None
+        )
+
+    internal = [
+        i for i, e in enumerate(inbound)
+        if e["cidr"] != PUBLIC_CIDR and not e["all_ports"] and e["from"] <= internal_service_port <= e["to"]
+        and i not in used
+    ]
+    if internal:
+        widest = max(internal, key=lambda i: inbound[i]["to"] - inbound[i]["from"])
+        used.update(internal)  # a narrower duplicate is not a separate "custom" rule
+        e = inbound[widest]
+        state["internal_service_port"] = {
+            "port": internal_service_port,
+            "range": "single" if e["from"] == e["to"] else f"{e['from']}-{e['to']}",
+        }
+    else:
+        state["internal_service_port"] = None
+
+    leftovers = [e for i, e in enumerate(inbound) if i not in used]
+    if leftovers:
+        public = [e for e in leftovers if e["cidr"] == PUBLIC_CIDR]
+        chosen = public[0] if public else sorted(leftovers, key=lambda e: (e["from"], e["cidr"]))[0]
+        state["inbound_custom"] = {
+            "port": "all" if chosen["all_ports"] else chosen["from"],
+            "source_cidr": chosen["cidr"],
+        }
+    else:
+        state["inbound_custom"] = None
+
+    state["outbound_default"] = (
+        {"port": "all", "destination_cidr": _pick_cidr([e["cidr"] for e in outbound])}
+        if outbound else None
+    )
+
+    peers = sorted(
+        pair["GroupId"]
+        for perm in security_group.get("IpPermissions", [])
+        for pair in perm.get("UserIdGroupPairs", [])
+    )
+    state["peer_sg_reference"] = peers[0] if peers else None
+    return state
+
+
+# ---------------------------------------------------------------------------
+# Phase 2: IAM role (get_role + get_role_policy + attached policies ->
+# normalized schema of scenario_definitions.iam_baseline)
+#
+# Documented simplifications:
+#   actions / resources / effect / requires_mfa come from ONE statement of
+#       the role's inline policy (Sid "PrimaryAccess", else the first one).
+#   trust_principal -- first AWS principal of the trust policy (sorted), or
+#       "service:<name>" for a service principal.
+#   group_membership -- roles cannot join IAM groups, so the role analogue
+#       of scenario I5 is used: "AdminGroup" when the AWS-managed
+#       AdministratorAccess policy is attached, otherwise "StandardAccess".
+# ---------------------------------------------------------------------------
+
+ADMIN_POLICY_ARN = "arn:aws:iam::aws:policy/AdministratorAccess"
+PRIMARY_STATEMENT_SID = "PrimaryAccess"
+
+
+def _as_sorted_list(value: Any) -> List[str]:
+    if value is None:
+        return []
+    if isinstance(value, str):
+        return [value]
+    return sorted(value)
+
+
+def _requires_mfa(condition: Optional[Dict[str, Any]]) -> bool:
+    for operator in ("Bool", "BoolIfExists"):
+        value = (condition or {}).get(operator, {}).get("aws:MultiFactorAuthPresent")
+        if value in ("true", True, ["true"]):
+            return True
+    return False
+
+
+def _trust_principal(trust_policy: Dict[str, Any]) -> Optional[str]:
+    for statement in trust_policy.get("Statement", []):
+        principal = statement.get("Principal", {})
+        if isinstance(principal, str):
+            return principal
+        if "AWS" in principal:
+            return _as_sorted_list(principal["AWS"])[0]
+        if "Service" in principal:
+            return f"service:{_as_sorted_list(principal['Service'])[0]}"
+    return None
+
+
+def normalize_iam_role_actual_state(raw: Dict[str, Any]) -> Dict[str, Any]:
+    """raw: bundle returned by aws_state.fetch_iam_role_raw_config()."""
+    role = raw["role"]
+    policy = raw.get("inline_policy") or {"Statement": []}
+    statements = policy.get("Statement", [])
+    if isinstance(statements, dict):
+        statements = [statements]
+    primary = next((s for s in statements if s.get("Sid") == PRIMARY_STATEMENT_SID), None)
+    if primary is None and statements:
+        primary = statements[0]
+    primary = primary or {}
+
+    boundary = role.get("PermissionsBoundary") or {}
+    return {
+        "resource_type": "aws_iam_entity",
+        "entity_name": role["RoleName"],
+        "actions": _as_sorted_list(primary.get("Action")),
+        "resources": _as_sorted_list(primary.get("Resource")),
+        "effect": primary.get("Effect"),
+        "requires_mfa": _requires_mfa(primary.get("Condition")),
+        "trust_principal": _trust_principal(role.get("AssumeRolePolicyDocument", {})),
+        "permissions_boundary": boundary.get("PermissionsBoundaryArn"),
+        "group_membership": "AdminGroup" if ADMIN_POLICY_ARN in raw.get("attached_policy_arns", []) else "StandardAccess",
     }

@@ -13,3 +13,6 @@ override.tf
 override.tf.json
 *_override.tf
 *_override.tf.json
+
+# Lambda deployment package built by archive_file
+build/
