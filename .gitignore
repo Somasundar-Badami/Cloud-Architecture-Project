@@ -9,6 +9,5 @@ src/aws/terraform/.build/
 src/aws/terraform/*.tfstate*
 src/aws/terraform/*.tfvars
 src/aws/terraform/outputs.json
-src/aws/terraform/.terraform.lock.hcl
 # Office lock files
 ~$*
