@@ -14,8 +14,8 @@ TEAM = {
     "course": "BCSE355L – Cloud Architecture Design",
     "instructor": "Dr. Priya V",
     "students": [
-        {"id": "Student 1", "name": "[Student 1 Name]", "reg": "[Reg. No.]", "papers": (1, 8)},
-        {"id": "Student 2", "name": "[Student 2 Name]", "reg": "[Reg. No.]", "papers": (9, 15)},
+        {"id": "Student 1", "name": "Keshav Khandelwal", "reg": "24BIT0461", "papers": (1, 8)},
+        {"id": "Student 2", "name": "Somasundar Shivappa Badami", "reg": "24BIT0465", "papers": (9, 15)},
     ],
 }
 
