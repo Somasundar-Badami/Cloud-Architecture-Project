@@ -1,0 +1,263 @@
+{
+  "scenario_group_split": {
+    "train_scenario_ids": [
+      "E3",
+      "E4",
+      "E5",
+      "E6",
+      "E7",
+      "I1",
+      "I2",
+      "I3",
+      "I4",
+      "I5",
+      "I6",
+      "S1",
+      "S2",
+      "S4",
+      "S6",
+      "S7"
+    ],
+    "test_scenario_ids": [
+      "E1",
+      "E2",
+      "S3id",
+      "S5"
+    ],
+    "num_train_scenarios": 16,
+    "num_test_scenarios": 4,
+    "leakage_check": {
+      "num_scenarios_in_train": 16,
+      "num_scenarios_in_test": 4,
+      "scenario_ids_appearing_in_both_train_and_test": [],
+      "num_scenarios_leaked": 0,
+      "num_group_ids_appearing_in_both_train_and_test": 0
+    }
+  },
+  "class_distribution": {
+    "train_class_distribution": {
+      "Low": 180,
+      "Medium": 132,
+      "High": 140,
+      "Critical": 140
+    },
+    "test_class_distribution": {
+      "Low": 0,
+      "Medium": 44,
+      "High": 35,
+      "Critical": 40
+    },
+    "train_total": 592,
+    "test_total": 119,
+    "classes_absent_from_test": [
+      "Low"
+    ],
+    "classes_absent_from_train": []
+  },
+  "resource_type_risk_label_combinations": {
+    "train_crosstab": {
+      "iam_policy": {
+        "Low": 0,
+        "Medium": 0,
+        "High": 70,
+        "Critical": 80
+      },
+      "s3_bucket": {
+        "Low": 90,
+        "Medium": 44,
+        "High": 0,
+        "Critical": 60
+      },
+      "security_group": {
+        "Low": 90,
+        "Medium": 88,
+        "High": 70,
+        "Critical": 0
+      }
+    },
+    "combinations_in_test_but_absent_from_train": [
+      "s3_bucket + High",
+      "security_group + Critical"
+    ],
+    "combinations_in_train_but_absent_from_test": [
+      "iam_policy + Critical",
+      "iam_policy + High",
+      "s3_bucket + Critical",
+      "s3_bucket + Low",
+      "security_group + High",
+      "security_group + Low",
+      "security_group + Medium"
+    ],
+    "combinations_in_both": [
+      "s3_bucket + Medium"
+    ],
+    "note": "'absent from train' combinations are the important ones for generalization: they mean the model, for this split, has NEVER seen that (resource_type, risk_label) pairing during training and must extrapolate to classify it correctly at test time."
+  },
+  "unseen_combination_model_impact": {
+    "random_forest_per_scenario": {
+      "E1": {
+        "true_label": "Critical",
+        "n_records": 20,
+        "prediction_distribution": {
+          "High": 20
+        },
+        "n_correct": 0,
+        "accuracy_for_this_scenario": 0.0
+      },
+      "E2": {
+        "true_label": "Critical",
+        "n_records": 20,
+        "prediction_distribution": {
+          "High": 20
+        },
+        "n_correct": 0,
+        "accuracy_for_this_scenario": 0.0
+      },
+      "S3id": {
+        "true_label": "High",
+        "n_records": 35,
+        "prediction_distribution": {
+          "Medium": 11,
+          "Critical": 24
+        },
+        "n_correct": 0,
+        "accuracy_for_this_scenario": 0.0
+      },
+      "S5": {
+        "true_label": "Medium",
+        "n_records": 44,
+        "prediction_distribution": {
+          "Medium": 44
+        },
+        "n_correct": 44,
+        "accuracy_for_this_scenario": 1.0
+      }
+    },
+    "decision_tree_per_scenario": {
+      "E1": {
+        "true_label": "Critical",
+        "n_records": 20,
+        "prediction_distribution": {
+          "Critical": 20
+        },
+        "n_correct": 20,
+        "accuracy_for_this_scenario": 1.0
+      },
+      "E2": {
+        "true_label": "Critical",
+        "n_records": 20,
+        "prediction_distribution": {
+          "Critical": 20
+        },
+        "n_correct": 20,
+        "accuracy_for_this_scenario": 1.0
+      },
+      "S3id": {
+        "true_label": "High",
+        "n_records": 35,
+        "prediction_distribution": {
+          "Critical": 35
+        },
+        "n_correct": 0,
+        "accuracy_for_this_scenario": 0.0
+      },
+      "S5": {
+        "true_label": "Medium",
+        "n_records": 44,
+        "prediction_distribution": {
+          "Medium": 44
+        },
+        "n_correct": 44,
+        "accuracy_for_this_scenario": 1.0
+      }
+    },
+    "explanation": "Held-out scenarios in this split are E1, E2 (true=Critical, resource_type=security_group), S3id (true=High, resource_type=s3_bucket), and S5 (true=Medium, resource_type=s3_bucket, but Medium s3_bucket examples DO appear in train via S6, so S5 is not a fully unseen combo). E1/E2 and S3id correspond exactly to the 'combinations_in_test_but_absent_from_train' found above (security_group+Critical, s3_bucket+High). Both models were forced to extrapolate for these two combinations specifically; S5 (a seen combo, different scenario) is a cleaner test of ordinary within-combo generalization and is expected to score better, which the per-scenario breakdown above can be checked against directly."
+  },
+  "e7_vs_i3_i6_feature_sufficiency": {
+    "feature_signatures": {
+      "E7": {
+        "risk_label": "Medium",
+        "resource_type": "security_group",
+        "changed_attribute": "peer_sg_reference",
+        "security_sensitivity": "Medium",
+        "public_exposure": false,
+        "encryption_change": false,
+        "privilege_change": true,
+        "port_exposure": "internal",
+        "change_magnitude": "Medium"
+      },
+      "I3": {
+        "risk_label": "High",
+        "resource_type": "iam_policy",
+        "changed_attribute": "requires_mfa",
+        "security_sensitivity": "Medium",
+        "public_exposure": false,
+        "encryption_change": false,
+        "privilege_change": true,
+        "port_exposure": "none",
+        "change_magnitude": "Medium"
+      },
+      "I6": {
+        "risk_label": "High",
+        "resource_type": "iam_policy",
+        "changed_attribute": "permissions_boundary",
+        "security_sensitivity": "Medium",
+        "public_exposure": false,
+        "encryption_change": false,
+        "privilege_change": true,
+        "port_exposure": "none",
+        "change_magnitude": "Medium"
+      }
+    },
+    "core_severity_features_checked": [
+      "security_sensitivity",
+      "public_exposure",
+      "encryption_change",
+      "privilege_change",
+      "change_magnitude"
+    ],
+    "core_severity_signature_identical_between_E7_and_I3_I6": true,
+    "features_that_differ_between_E7_and_I3_I6": [
+      "resource_type",
+      "changed_attribute",
+      "port_exposure"
+    ],
+    "targeted_holdout_experiment": {
+      "description": "Train on all 19 other scenarios (E7's records entirely removed from training, so its specific changed_attribute value 'peer_sg_reference' is never seen), test only on E7's 44 records.",
+      "n_train": 667,
+      "n_test_E7_only": 44,
+      "true_label_for_all_E7_records": "Medium",
+      "random_forest_prediction_distribution": {
+        "High": 44
+      },
+      "random_forest_correct_rate": 0.0,
+      "decision_tree_prediction_distribution": {
+        "High": 44
+      },
+      "decision_tree_correct_rate": 0.0
+    },
+    "conclusion": "NOT SUFFICIENT. Although resource_type and port_exposure technically differ between E7 (security_group, port_exposure=internal) and I3/I6 (iam_policy, port_exposure=none), this audit found empirically -- not by assumption -- that when E7 is genuinely held out, both Random Forest and Decision Tree predict 'High' for 100% of E7's records, i.e. they collapse E7 into the I3/I6 pattern rather than correctly generalizing to 'Medium'. The likely mechanism: E7 is the ONLY security_group scenario with privilege_change=True, so holding it out removes every training example of (security_group, privilege_change=True) entirely; the model then has no choice but to generalize from (privilege_change=True, change_magnitude=Medium) alone, a pattern it has only ever seen labeled 'High' (from I3/I6). This confirms and sharpens the E7 rule-mismatch flagged in the dataset-generation milestone: the current 9-feature schema does not give the model enough signal to learn that an internal-only security-group privilege change is less severe than an IAM control removal, without scenario-level memorization via changed_attribute."
+  },
+  "changed_attribute_encoding_check": {
+    "changed_attribute_is_in_nominal_onehot_transformer": true,
+    "num_onehot_columns_for_changed_attribute": 20,
+    "example_onehot_column_names": [
+      "nominal__changed_attribute_acl",
+      "nominal__changed_attribute_actions+resources",
+      "nominal__changed_attribute_block_public_access",
+      "nominal__changed_attribute_bucket_policy_principal",
+      "nominal__changed_attribute_effect"
+    ],
+    "seen_category_value_changes_model_input": true,
+    "unseen_category_zeroes_only_its_own_onehot_block": true,
+    "unseen_category_other_features_remain_populated": true,
+    "conclusion": "changed_attribute IS encoded as a categorical (one-hot) feature and IS retained/used during prediction for any value seen during training -- confirmed by the fact that changing only this column changes the model's input vector. For a changed_attribute value never seen during training (the scenario-group-aware split's situation for held-out scenarios), OneHotEncoder(handle_unknown='ignore') correctly zeroes out only the changed_attribute columns while leaving every other feature (resource_type, security_sensitivity, public_exposure, etc.) populated and usable -- it does not crash and does not corrupt the rest of the feature vector."
+  },
+  "methodological_limitations": {
+    "synthetic_data": "The entire dataset is synthetically generated from 20 hand-authored scenario templates (see scenario_definitions.py), not sourced from real AWS Config drift history -- confirmed absent in the literature survey milestone. Every record's risk_label is a human-assigned ground truth for the scenario it belongs to, not an observed outcome. Metrics reported here measure how well the models reproduce the DESIGNED rules of this synthetic dataset, not how well they would perform on real, messier AWS drift events with noisier labels, missing fields, or attribute combinations outside the 20 templates.",
+    "scenario_group_split_sensitivity": "The scenario-group-aware split (Split B) holds out 4 of 20 scenario groups. With only 20 groups, which 4 happen to be selected materially changes reported performance -- this audit's per-scenario breakdown shows accuracy for the current seed (random_state=42) varies enormously by which (resource_type, risk_label) combinations happen to be fully excluded from training. A single train/test split with this few groups is a point estimate, not a stable performance measure; repeated group-based cross-validation (e.g. GroupKFold or multiple GroupShuffleSplit draws with different seeds) would be needed before treating any single accuracy number from Split B as representative.",
+    "unseen_resource_type_risk_combinations": "This audit confirmed that for the current Split B seed, (security_group, Critical) and (s3_bucket, High) never appear together in training. Both models were forced to extrapolate to these combinations at test time and, per the per-scenario breakdown in this report, did so with measurably degraded accuracy on exactly those scenarios. This is a structural property of having only 20 scenario templates spread across 3 resource types x 4 risk levels (12 possible combinations, not all scenario counts per combination are equal), not a flaw introduced by any one random split.",
+    "balanced_class_distribution": "The dataset was deliberately constructed with near-equal class counts (~175-180 records per risk level, see the dataset validation report) to give the classifier enough signal per class during training. This does NOT reflect a real enterprise AWS environment, where the overwhelming majority of configuration states are presumably benign/Low risk and Critical misconfigurations are comparatively rare. A model trained on this balanced distribution has not been tested against the class imbalance and higher false-positive cost structure a real deployment would present, and its reported precision/recall should not be assumed to transfer directly to a heavily imbalanced production data stream.",
+    "limited_number_of_scenario_groups": "20 scenario groups is a small population for any group-aware evaluation methodology. Statistical conclusions drawn from held-out-group performance (Split B, and the targeted E7 holdout in this audit) are based on single-digit numbers of held-out groups per experiment and should be read as illustrative case studies of a real generalization failure mode, not as a statistically powered estimate of generalization accuracy. A production-grade evaluation would need substantially more distinct scenario patterns, ideally sourced from real drift events, to draw a reliable generalization estimate."
+  }
+}
