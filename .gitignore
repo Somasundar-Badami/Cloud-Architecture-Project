@@ -1,0 +1,14 @@
+__pycache__/
+*.pyc
+.pytest_cache/
+venv/
+.venv/
+# Terraform
+src/aws/terraform/.terraform/
+src/aws/terraform/.build/
+src/aws/terraform/*.tfstate*
+src/aws/terraform/*.tfvars
+src/aws/terraform/outputs.json
+src/aws/terraform/.terraform.lock.hcl
+# Office lock files
+~$*
