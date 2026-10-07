@@ -6,7 +6,7 @@
 variable "aws_region" {
   description = "AWS region to deploy the demo bucket into."
   type        = string
-  default     = "us-east-1"
+  default     = "ap-southeast-2" # free-plan account is restricted to this region
 }
 
 variable "project_prefix" {

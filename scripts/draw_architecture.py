@@ -85,7 +85,7 @@ def aws_architecture():
     tf = box(ax, 1.6, 24, 13.5, 9, "Terraform (IaC)", "terraform apply\n= desired state", C["network"])
     mail = box(ax, 1.6, 5, 13.5, 8, "Email inbox", "drift alerts +\nbudget warnings", C["external"])
 
-    group(ax, 18, 2, 81, 56, "AWS Cloud  (us-east-1, free tier)", "#232F3E", ls="-", fs=11)
+    group(ax, 18, 2, 81, 56, "AWS Cloud  (ap-southeast-2 Sydney, free tier)", "#232F3E", ls="-", fs=11)
 
     cog = box(ax, 21, 44, 14, 9, "Amazon Cognito", "User pool · JWT\n(no self sign-up)", C["security"])
     apigw = box(ax, 40, 44, 14, 9, "API Gateway", "HTTP API · JWT authorizer\nthrottled 5 req/s", C["network"])
