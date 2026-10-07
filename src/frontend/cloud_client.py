@@ -41,7 +41,7 @@ def load_config() -> Dict[str, Optional[str]]:
         cfg["region"] = outputs.get("aws_region", {}).get("value")
     cfg["api_url"] = os.environ.get("IDG_API_URL", cfg["api_url"])
     cfg["client_id"] = os.environ.get("IDG_COGNITO_CLIENT_ID", cfg["client_id"])
-    cfg["region"] = os.environ.get("IDG_REGION", cfg["region"] or "us-east-1")
+    cfg["region"] = os.environ.get("IDG_REGION", cfg["region"] or "ap-southeast-2")
     return cfg
 
 
