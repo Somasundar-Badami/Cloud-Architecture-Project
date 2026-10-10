@@ -409,7 +409,7 @@ def render_results(result, scenario_ground_truth, int_to_label):
     prob_df = pd.DataFrame([{"risk_level": k, "probability": v} for k, v in result["probabilities"].items()])
     prob_df["risk_level"] = pd.Categorical(prob_df["risk_level"], categories=RISK_LABEL_ORDER, ordered=True)
     prob_df = prob_df.sort_values("risk_level")
-    st.bar_chart(prob_df.set_index("risk_level"))
+    render_probability_chart(result["probabilities"])
     st.dataframe(prob_df, use_container_width=True)
 
     st.header("5. SHAP Local Explanation")
@@ -435,6 +435,27 @@ def render_results(result, scenario_ground_truth, int_to_label):
 
 
 RISK_COLORS = {"Critical": "#c0392b", "High": "#e67e22", "Medium": "#f1c40f", "Low": "#27ae60", "Review": "#8e44ad"}
+
+
+def render_probability_chart(probabilities):
+    """Compact horizontal bar chart in severity order (Low -> Critical)."""
+    import altair as alt
+
+    df = pd.DataFrame({"risk_level": RISK_LABEL_ORDER,
+                       "probability": [float(probabilities.get(k, 0.0)) for k in RISK_LABEL_ORDER]})
+    chart = (
+        alt.Chart(df)
+        .mark_bar()
+        .encode(
+            x=alt.X("probability:Q", scale=alt.Scale(domain=[0, 1]), axis=alt.Axis(format="%"), title="Probability"),
+            y=alt.Y("risk_level:N", sort=RISK_LABEL_ORDER, title=None),
+            color=alt.Color("risk_level:N", scale=alt.Scale(domain=list(RISK_COLORS), range=list(RISK_COLORS.values())),
+                            legend=None),
+            tooltip=["risk_level", alt.Tooltip("probability:Q", format=".1%")],
+        )
+        .properties(height=150)
+    )
+    st.altair_chart(chart, use_container_width=True)
 
 
 def render_offline_analyzer():
@@ -531,7 +552,7 @@ def render_live_aws():
             if f["has_drift"]:
                 st.table(pd.DataFrame(f["changes"]).astype(str))
                 if f.get("probabilities"):
-                    st.bar_chart(pd.Series(f["probabilities"]).reindex(RISK_LABEL_ORDER))
+                    render_probability_chart(f["probabilities"])
                 if f.get("unmodelled_attributes"):
                     st.warning("Needs manual review: " + ", ".join(f["unmodelled_attributes"]))
                 if f.get("remediation"):

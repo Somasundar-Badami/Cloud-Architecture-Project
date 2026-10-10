@@ -541,6 +541,11 @@ class TestCheckAwsCredentials:
             monkeypatch.delenv(var, raising=False)
         monkeypatch.setenv("AWS_SHARED_CREDENTIALS_FILE", "/tmp/definitely_does_not_exist_credentials")
         monkeypatch.setenv("AWS_CONFIG_FILE", "/tmp/definitely_does_not_exist_config")
+        # boto3 caches credentials on its module-level default session; an
+        # earlier test (or a developer machine with real AWS credentials)
+        # would otherwise leak them in here.
+        import boto3
+        monkeypatch.setattr(boto3, "DEFAULT_SESSION", None)
 
         ok, message, identity = check_aws_credentials()
         assert ok is False

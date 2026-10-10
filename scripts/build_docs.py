@@ -419,8 +419,29 @@ def sec_results(d, h=1):
     ], [7.5, 6.0, 2.0], font=9)
     para(d, "Full suite: 218 tests passed, 1 skipped (the skipped test needs a real AWS account and runs with "
             "RUN_REAL_AWS_TESTS=1).", bold=True)
-    for name, cap in (("dashboard_input_S1.jpg", "Figure 8. Streamlit dashboard – scenario S1 input."),
-                      ("dashboard_prediction_critical.jpg", "Figure 9. Dashboard prediction: Critical.")):
+    d.add_heading("Live AWS deployment", level=h + 1)
+    para(d, "The stack was deployed with terraform apply to a Free-plan AWS account in ap-southeast-2 (Sydney) – "
+            "40 resources created in under two minutes. The account is region-locked by an AWS-managed "
+            "organization policy, which is why Sydney rather than us-east-1 was used; the free tier is identical.",
+         align=WD_ALIGN_PARAGRAPH.JUSTIFY)
+    table(d, ["Step on the real account", "Observed result"], [
+        ("First scan after deployment", "All 3 resources: no drift (no false positives; scan time 2.3 s)"),
+        ("Hourly EventBridge schedule", "Ran every hour with 0 Lambda errors and 0 throttles"),
+        ("SSH (22) opened to 0.0.0.0/0 in the EC2 console", "Next scan: Critical, change inbound_ssh.source_cidr "
+         "10.0.0.0/8 → 0.0.0.0/0"),
+        ("Alerting", "SNS e-mail alert + CloudWatch Critical-drift alarm: 3 notifications delivered, 0 failed"),
+        ("Rule removed in the console", "Next scan: no drift on all resources"),
+        ("terraform apply re-run while drift existed", "Terraform itself reverted the unmanaged SSH rule – the "
+         "standard IaC way of correcting accepted drift"),
+        ("Dashboard access", "Cognito sign-in → API Gateway (JWT) → API Lambda → DynamoDB"),
+    ], [7.0, 9.5], font=9)
+    for name, cap in (("aws_live_critical_ssh_drift.png", "Figure 8. Live AWS: SSH opened to the internet detected as "
+                       "Critical."),
+                      ("aws_live_no_drift_after_fix.png", "Figure 9. Live AWS: after removing the rule, the next scan "
+                       "reports no drift.")):
+        figure(d, os.path.join(RES, "screenshots", name), cap, width_cm=15.5)
+    for name, cap in (("dashboard_input_S1.jpg", "Figure 10. Offline drift analyzer – scenario S1 input."),
+                      ("dashboard_prediction_critical.jpg", "Figure 11. Offline analyzer prediction: Critical.")):
         figure(d, os.path.join(RES, "screenshots", name), cap, width_cm=14)
 
 
@@ -428,7 +449,7 @@ def sec_deploy(d, h=1):
     d.add_heading("Deployment and Cost Control", level=h)
     bullets(d, [
         "Create an AWS account, enable MFA on the root user and create an IAM admin user for daily use.",
-        "Install Terraform ≥ 1.5 and the AWS CLI; run aws configure.",
+        "Install Terraform ≥ 1.5 and the AWS CLI; run aws configure (region ap-southeast-2 for our Free-plan account).",
         "cd src/aws/terraform && terraform init && terraform apply -var alert_email=<you@example.com>",
         "Confirm the SNS subscription e-mail; sign in to the dashboard with the temporary Cognito password.",
         "terraform output -json > outputs.json; streamlit run src/frontend/app.py → Live AWS findings tab.",
