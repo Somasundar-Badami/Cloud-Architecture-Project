@@ -43,6 +43,8 @@ InfraDriftGuard continuously compares the infrastructure you **declared in Terra
 
 ## Quick start (local, no AWS account)
 
+First time on a new laptop? Follow **[docs/TEAMMATE_SETUP.md](docs/TEAMMATE_SETUP.md)**, which covers installing everything, testing and running the project.
+
 ```bash
 python -m venv venv && venv\Scripts\activate      # Linux/macOS: source venv/bin/activate
 pip install -r requirements.txt
