@@ -1,0 +1,7 @@
+# Sea glass theme (custom styling lives in src/frontend/sea_glass.py)
+[theme]
+base = "light"
+primaryColor = "#7E6BC4"
+backgroundColor = "#F5F2FA"
+secondaryBackgroundColor = "#EDE7F6"
+textColor = "#2A2340"

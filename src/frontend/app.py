@@ -48,6 +48,7 @@ from shap_explainability import (  # noqa: E402
     compute_shap_values,
     check_additivity,
 )
+import sea_glass  # noqa: E402  (presentation only: CSS/HTML strings)
 
 MODELS_DIR = project_paths.MODELS_DIR
 RESULTS_DIR = project_paths.RESULTS_DIR
@@ -288,29 +289,31 @@ def render_sidebar():
 
 
 def render_header():
-    st.title("InfraDriftGuard — AI-Based Infrastructure Drift Detection")
-    st.caption(
-        "**Drift analyzer** runs the trained model locally on any desired/actual JSON. "
-        "**Live AWS findings** shows what the deployed Lambda detector found in your AWS account."
+    st.markdown(
+        sea_glass.hero_html(
+            "InfraDriftGuard",
+            "Catch the moment your AWS resources drift from their Terraform design, "
+            "see how risky the change is, and see exactly why.",
+        ),
+        unsafe_allow_html=True,
     )
     st.info(
-        "The risk model is trained on 711 synthetic records from 20 hand-authored scenarios. "
-        "Its record-level accuracy does not measure real-world generalization — see the "
-        "Evaluation Limitation note in the sidebar."
+        "The model is trained on 711 synthetic records from 20 scenarios. Its record-level "
+        "accuracy overstates real-world performance; the sidebar has the honest numbers."
     )
 
 
 def render_input_section():
-    st.header("1. Provide Desired vs. Actual State")
-    mode = st.radio("Input method", ["Predefined demonstration scenario", "Custom JSON"], horizontal=True)
+    st.subheader("Configuration to check")
+    mode = st.radio("Input", ["Demo scenario", "Custom JSON"], horizontal=True, label_visibility="collapsed")
 
     desired_text, actual_text = "", ""
     resource_type_hint = RESOURCE_TYPE_OPTIONS[0]
     scenario_ground_truth = None
 
-    if mode == "Predefined demonstration scenario":
+    if mode == "Demo scenario":
         options = get_predefined_scenario_options()
-        labels = [f"{o['scenario_id']} — {o['description']} ({o['approved_risk_label']})" for o in options]
+        labels = [f"{o['scenario_id']} — {o['description']}" for o in options]
         choice_idx = st.selectbox("Scenario", range(len(options)), format_func=lambda i: labels[i])
         chosen = options[choice_idx]
         desired, actual, resource_type_hint, ground_truth_label = generate_scenario_json(chosen["scenario_id"])
@@ -318,30 +321,27 @@ def render_input_section():
         actual_text = json.dumps(actual, indent=2)
         scenario_ground_truth = ground_truth_label
         st.caption(
-            f"Approved ground-truth risk label for this scenario: **{ground_truth_label}** "
-            f"(from `scenario_definitions.py` — shown for comparison, never fed to the model)."
+            f"Approved label: {sea_glass.risk_chip(ground_truth_label)} &nbsp;shown for comparison, "
+            "never given to the model.",
+            unsafe_allow_html=True,
         )
     else:
-        resource_type_hint = st.selectbox("Resource type (required by extract_features)", RESOURCE_TYPE_OPTIONS)
+        resource_type_hint = st.selectbox("Resource type", RESOURCE_TYPE_OPTIONS)
         st.caption(
-            "Custom JSON is not validated against a specific AWS schema — any two "
-            "JSON objects can be compared. If a changed attribute isn't one of the "
-            "20 approved attribute names, prediction will report 'unknown attribute' "
-            "rather than guess."
+            "Any two JSON objects can be compared. If a changed attribute isn't one of the "
+            "20 known attribute names, the result says so instead of guessing."
         )
 
-    col1, col2 = st.columns(2)
-    with col1:
-        desired_input = st.text_area("Desired state (JSON)", value=desired_text, height=280, key="desired_input")
-    with col2:
-        actual_input = st.text_area("Actual state (JSON)", value=actual_text, height=280, key="actual_input")
-
+    desired_input = st.text_area("Desired state — what Terraform says", value=desired_text,
+                                 height=200, key="desired_input")
+    actual_input = st.text_area("Actual state — what AWS really has", value=actual_text,
+                                height=200, key="actual_input")
     drift_frequency = st.number_input(
-        "drift_frequency — historical drift count for this resource "
-        "(not derivable from a single state comparison; supply your own estimate)",
+        "Past drift count for this resource",
         min_value=0, max_value=50, value=0, step=1,
+        help="drift_frequency: how often this resource drifted before. It can't be read from one "
+             "comparison, so supply your own estimate.",
     )
-
     return desired_input, actual_input, resource_type_hint, drift_frequency, scenario_ground_truth
 
 
@@ -354,6 +354,7 @@ def render_shap_waterfall_figure(result, int_to_label):
         feature_names=result["feature_names"],
     )
     fig = plt.figure()
+    fig.patch.set_alpha(0)
     shap.plots.waterfall(explanation, show=False, max_display=12)
     plt.title(f"SHAP explanation — predicted: {int_to_label[predicted_class_int]}", fontsize=10)
     plt.tight_layout()
@@ -361,80 +362,62 @@ def render_shap_waterfall_figure(result, int_to_label):
 
 
 def render_results(result, scenario_ground_truth, int_to_label):
-    st.header("2. Drift Detection Result")
     drift_result = result["drift_result"]
 
-    col1, col2 = st.columns(2)
-    col1.metric("Drift detected", "Yes" if drift_result["has_drift"] else "No")
-    col2.metric("Number of changes", drift_result["num_changes"])
-
-    if drift_result["has_drift"]:
-        st.markdown(f"**Changed attributes:** {', '.join(drift_result['changed_attributes'])}")
-        st.subheader("Old vs. new values")
-        change_table = pd.DataFrame(drift_result["changes"])
-        st.dataframe(change_table, use_container_width=True)
-    else:
-        st.info("No drift detected — desired state and actual state are identical.")
-
-    if result["error"] == "unknown_attribute":
-        st.error(
-            "⚠️ One or more changed attributes are not in the model's known "
-            "feature schema (`ATTRIBUTE_KNOWLEDGE_BASE` in `feature_extraction.py`), "
-            "so a risk prediction cannot be generated for this input.\n\n"
-            f"Details: {result['message']}"
-        )
+    if not drift_result["has_drift"]:
+        st.markdown(sea_glass.verdict_html(
+            "No drift", "Desired and actual state are identical, so there is nothing to score."),
+            unsafe_allow_html=True)
         return
 
-    st.header("3. Extracted ML Features")
-    st.caption(
-        "Computed live by `feature_extraction.extract_features()` from the drift "
-        "result above — not hand-entered."
-    )
-    st.json(result["features"])
+    if result["error"] == "unknown_attribute":
+        st.markdown(sea_glass.verdict_html(
+            "Review", "A changed attribute is outside the model's known feature schema, so no "
+            "risk score was produced. Check it by hand."), unsafe_allow_html=True)
+        st.caption(f"Details: {result['message']}")
+        st.dataframe(pd.DataFrame(drift_result["changes"]), width="stretch", hide_index=True)
+        return
 
-    st.header("4. Risk Prediction — Primary Random Forest Model")
-    st.caption(
-        "Generated live by the saved **primary Random Forest model** "
-        "(`models/random_forest_model.joblib`) via `preprocessor.transform()` + "
-        "`model.predict_proba()` on the features above."
-    )
     predicted_label = result["predicted_label"]
+    confidence = float(result["probabilities"].get(predicted_label, 0.0))
+    detail = f"Random Forest, {confidence:.0%} confident."
     if scenario_ground_truth:
-        match = "✓ matches" if predicted_label == scenario_ground_truth else "✗ does NOT match"
-        st.markdown(f"### Predicted risk: **{predicted_label}**")
-        st.markdown(f"Approved ground-truth label for this scenario: **{scenario_ground_truth}** ({match})")
-    else:
-        st.markdown(f"### Predicted risk: **{predicted_label}**")
+        detail += (" Matches the approved label." if predicted_label == scenario_ground_truth
+                   else f" The approved label is {scenario_ground_truth}.")
+    st.markdown(sea_glass.verdict_html(predicted_label, detail), unsafe_allow_html=True)
 
-    prob_df = pd.DataFrame([{"risk_level": k, "probability": v} for k, v in result["probabilities"].items()])
-    prob_df["risk_level"] = pd.Categorical(prob_df["risk_level"], categories=RISK_LABEL_ORDER, ordered=True)
-    prob_df = prob_df.sort_values("risk_level")
-    render_probability_chart(result["probabilities"])
-    st.dataframe(prob_df, use_container_width=True)
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Changes", drift_result["num_changes"])
+    m2.metric("Resource", result["features"].get("resource_type", "—"))
+    m3.metric("Public", "Yes" if result["features"].get("public_exposure") else "No")
 
-    st.header("5. SHAP Local Explanation")
-    additivity = result["additivity_check"]
-    st.caption(
-        f"SHAP `TreeExplainer` values for the **predicted** class ({predicted_label}), "
-        f"computed live — not fabricated. Additivity check (base_value + Σ SHAP values "
-        f"vs. model output): max deviation = {additivity['max_abs_diff_from_predict_proba']:.2e} "
-        f"({'holds' if additivity['additivity_holds'] else 'FAILED'})."
-    )
+    t_changes, t_why, t_features, t_prob = st.tabs(["Changes", "Why", "Features", "Scores"])
+    with t_changes:
+        st.dataframe(pd.DataFrame(drift_result["changes"]).astype(str), width="stretch", hide_index=True)
+    with t_why:
+        additivity = result["additivity_check"]
+        st.caption(
+            f"SHAP TreeExplainer values for the predicted class ({predicted_label}). "
+            f"Additivity check {'holds' if additivity['additivity_holds'] else 'FAILED'} "
+            f"(max deviation {additivity['max_abs_diff_from_predict_proba']:.1e})."
+        )
+        st.markdown("**Pushed risk up**")
+        st.dataframe(pd.DataFrame(result["top_positive_contributors"], columns=["feature", "shap"]),
+                     width="stretch", hide_index=True)
+        st.markdown("**Pulled risk down**")
+        st.dataframe(pd.DataFrame(result["top_negative_contributors"], columns=["feature", "shap"]),
+                     width="stretch", hide_index=True)
+        fig = render_shap_waterfall_figure(result, int_to_label)
+        st.pyplot(fig)
+        plt.close(fig)
+    with t_features:
+        st.caption("Computed from the drift above by extract_features(), not typed in by hand.")
+        st.json(result["features"])
+    with t_prob:
+        render_probability_chart(result["probabilities"])
 
-    colp, coln = st.columns(2)
-    with colp:
-        st.subheader("Top positive contributors")
-        st.table(pd.DataFrame(result["top_positive_contributors"], columns=["feature", "shap_value"]))
-    with coln:
-        st.subheader("Top negative contributors")
-        st.table(pd.DataFrame(result["top_negative_contributors"], columns=["feature", "shap_value"]))
 
-    fig = render_shap_waterfall_figure(result, int_to_label)
-    st.pyplot(fig)
-    plt.close(fig)
-
-
-RISK_COLORS = {"Critical": "#c0392b", "High": "#e67e22", "Medium": "#f1c40f", "Low": "#27ae60", "Review": "#8e44ad"}
+RISK_COLORS = {k: v for k, v in sea_glass.RISK_GLASS.items() if k != "No drift"}
 
 
 def render_probability_chart(probabilities):
@@ -445,42 +428,65 @@ def render_probability_chart(probabilities):
                        "probability": [float(probabilities.get(k, 0.0)) for k in RISK_LABEL_ORDER]})
     chart = (
         alt.Chart(df)
-        .mark_bar()
+        .mark_bar(cornerRadius=8, opacity=0.85)
         .encode(
             x=alt.X("probability:Q", scale=alt.Scale(domain=[0, 1]), axis=alt.Axis(format="%"), title="Probability"),
-            y=alt.Y("risk_level:N", sort=RISK_LABEL_ORDER, title=None),
+            y=alt.Y("risk_level:N", sort=RISK_LABEL_ORDER, title=None, axis=alt.Axis(labelOverlap=False)),
             color=alt.Color("risk_level:N", scale=alt.Scale(domain=list(RISK_COLORS), range=list(RISK_COLORS.values())),
                             legend=None),
             tooltip=["risk_level", alt.Tooltip("probability:Q", format=".1%")],
         )
-        .properties(height=150)
+        .properties(height=150, background="transparent")
+        .configure_view(strokeWidth=0)
+        .configure_axis(labelColor=sea_glass.PALETTE["ink"], titleColor=sea_glass.PALETTE["mist"],
+                        gridColor="rgba(34,54,61,.08)", domain=False)
     )
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width="stretch")
 
 
 def render_offline_analyzer():
-    desired_input, actual_input, resource_type_hint, drift_frequency, scenario_ground_truth = render_input_section()
+    left, right = st.columns([5, 6], gap="large")
 
-    if st.button("Analyze Drift", type="primary"):
+    with left:
+        with st.container(border=True, key="sg_input"):
+            desired_input, actual_input, resource_type_hint, drift_frequency, scenario_ground_truth = \
+                render_input_section()
+            analyze = st.button("Analyze drift", type="primary", width="stretch")
+
+    if analyze:
         desired_state, err_d = parse_json_input(desired_input, "Desired state")
-        if err_d:
-            st.error(f"⚠️ {err_d}")
-            st.stop()
         actual_state, err_a = parse_json_input(actual_input, "Actual state")
-        if err_a:
-            st.error(f"⚠️ {err_a}")
-            st.stop()
+        st.session_state.pop("analysis", None)
+        if err_d or err_a:
+            st.session_state["analysis_error"] = err_d or err_a
+        else:
+            st.session_state.pop("analysis_error", None)
+            try:
+                artifacts = load_model_artifacts()
+            except FileNotFoundError as e:
+                st.session_state["analysis_error"] = f"Model files missing: {e}"
+            else:
+                result = run_drift_and_risk_pipeline(
+                    desired_state, actual_state, resource_type_hint, drift_frequency, artifacts
+                )
+                st.session_state["analysis"] = (result, scenario_ground_truth, artifacts["int_to_label"])
+                st.session_state["analysis_inputs"] = (desired_input, actual_input, drift_frequency)
 
-        try:
-            artifacts = load_model_artifacts()
-        except FileNotFoundError as e:
-            st.error(f"⚠️ Model loading error: {e}")
-            st.stop()
-
-        result = run_drift_and_risk_pipeline(
-            desired_state, actual_state, resource_type_hint, drift_frequency, artifacts
-        )
-        render_results(result, scenario_ground_truth, artifacts["int_to_label"])
+    with right:
+        with st.container(border=True, key="sg_results"):
+            st.subheader("Result")
+            if st.session_state.get("analysis_error"):
+                st.error(st.session_state["analysis_error"])
+            elif "analysis" in st.session_state:
+                if st.session_state.get("analysis_inputs") != (desired_input, actual_input, drift_frequency):
+                    st.caption("The input on the left has changed. Press **Analyze drift** to update this result.")
+                render_results(*st.session_state["analysis"])
+            else:
+                st.markdown(
+                    "<div class='sg-empty'>Pick a scenario on the left and press "
+                    "<b>Analyze drift</b>. The risk level, what changed and why will appear here.</div>",
+                    unsafe_allow_html=True,
+                )
 
 
 def _load_streamlit_secrets_into_env():
@@ -552,13 +558,12 @@ def render_live_aws():
         st.info("No scans recorded yet. Click **Scan now**.")
         return
 
-    for f in sorted(findings, key=lambda x: x["resource_id"]):
+    for i, f in enumerate(sorted(findings, key=lambda x: x["resource_id"])):
         label = f["risk_label"] if f["has_drift"] else "No drift"
-        color = RISK_COLORS.get(label, "#7f8c8d")
-        with st.container(border=True):
+        with st.container(border=True, key=f"sg_finding_{i}"):
             st.markdown(
                 f"**{f['resource_type']}** · `{f['resource_id']}` &nbsp; "
-                f"<span style='background:{color};color:white;padding:2px 8px;border-radius:4px'>{label}</span> "
+                f"{sea_glass.risk_chip(label)} "
                 f"&nbsp; <small>scanned {f['detected_at']}</small>",
                 unsafe_allow_html=True,
             )
@@ -573,7 +578,8 @@ def render_live_aws():
 
 
 def main():
-    st.set_page_config(page_title="InfraDriftGuard", layout="wide")
+    st.set_page_config(page_title="InfraDriftGuard", page_icon="🪨", layout="wide")
+    st.markdown(sea_glass.css(), unsafe_allow_html=True)
     render_sidebar()
     render_header()
 
