@@ -483,9 +483,22 @@ def render_offline_analyzer():
         render_results(result, scenario_ground_truth, artifacts["int_to_label"])
 
 
+def _load_streamlit_secrets_into_env():
+    """On Streamlit Community Cloud there is no outputs.json; the same
+    settings are pasted into the app's Secrets box instead."""
+    try:
+        secrets = dict(st.secrets)
+    except Exception:  # no secrets.toml locally -- fine
+        return
+    for key in ("IDG_API_URL", "IDG_COGNITO_CLIENT_ID", "IDG_REGION"):
+        if key in secrets and key not in os.environ:
+            os.environ[key] = str(secrets[key])
+
+
 def render_live_aws():
     import cloud_client
 
+    _load_streamlit_secrets_into_env()
     cfg = cloud_client.load_config()
     st.subheader("Live findings from the deployed AWS stack")
     if not cfg["api_url"] or not cfg["client_id"]:

@@ -11,3 +11,5 @@ src/aws/terraform/*.tfvars
 src/aws/terraform/outputs.json
 # Office lock files
 ~$*
+# Streamlit secrets (never commit)
+.streamlit/secrets.toml
