@@ -613,7 +613,19 @@ def render_live_aws():
             else:
                 render_risk_trend_chart(trend)
 
-    for i, f in enumerate(sorted(findings, key=lambda x: x["resource_id"])):
+    f1, f2 = st.columns(2)
+    label_filter = f1.multiselect("Risk level", list(sea_glass.RISK_GLASS), placeholder="All risk levels")
+    type_filter = f2.multiselect("Resource type", RESOURCE_TYPE_OPTIONS, placeholder="All resource types")
+    shown = findings_analytics.filter_findings(findings, label_filter, type_filter)
+    st.download_button("Export findings (CSV)", findings_analytics.findings_to_csv(shown),
+                       file_name="infradriftguard_findings.csv", mime="text/csv",
+                       disabled=not shown)
+    if not shown:
+        st.markdown("<div class='sg-empty'>No findings match these filters. "
+                    "Clear a filter to see more.</div>", unsafe_allow_html=True)
+        return
+
+    for i, f in enumerate(sorted(shown, key=lambda x: x["resource_id"])):
         label = f["risk_label"] if f["has_drift"] else "No drift"
         with st.container(border=True, key=f"sg_finding_{i}"):
             st.markdown(
