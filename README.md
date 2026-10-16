@@ -64,6 +64,29 @@ python scripts/draw_architecture.py         # architecture/*.png
 python scripts/build_docs.py                # docs/*.docx
 ```
 
+## Dashboard
+
+`streamlit run src/frontend/app.py` opens two tabs.
+
+**Drift analyzer (offline model).** Pick one of the 20 demo scenarios or paste your own desired/actual JSON, then press **Analyze drift**. The result shows the risk level and five tabs:
+
+| Tab | What it shows |
+|---|---|
+| Changes | Every attribute that differs between desired and actual state |
+| Why | SHAP contributions that pushed the risk up or down, plus a waterfall plot |
+| Compliance | The CIS AWS Foundations Benchmark v1.4.0 and AWS Security Hub control each change violates |
+| Features | The 9 model features computed from the drift |
+| Scores | Probability of each risk level |
+
+**Live AWS findings.** After deploying (below), sign in with Cognito to see the latest finding for each monitored resource:
+
+- a summary row with how many resources are at each risk level
+- filters by risk level and resource type, with **Export findings (CSV)** for the filtered list
+- the CIS controls each drifted resource violates
+- **Show risk trend**, which loads up to 50 past scans per resource and charts the worst risk per scan
+
+The compliance mapping lives in `src/frontend/compliance.py`, and the trend, filter and CSV logic in `src/frontend/findings_analytics.py`. Both are plain Python with their own tests. Not every attribute has a CIS control, because CIS covers only a foundational subset of AWS; those rows show the Security Hub control instead.
+
 ## Deploy to AWS (free tier)
 
 Prerequisites: an AWS account (turn on MFA for the root user and use an IAM admin user), the [AWS CLI](https://aws.amazon.com/cli/) set up with `aws configure`, and [Terraform ≥ 1.5](https://developer.hashicorp.com/terraform/install).
