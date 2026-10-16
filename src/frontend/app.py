@@ -49,6 +49,7 @@ from shap_explainability import (  # noqa: E402
     check_additivity,
 )
 import sea_glass  # noqa: E402  (presentation only: CSS/HTML strings)
+import compliance  # noqa: E402
 
 MODELS_DIR = project_paths.MODELS_DIR
 RESULTS_DIR = project_paths.RESULTS_DIR
@@ -391,9 +392,12 @@ def render_results(result, scenario_ground_truth, int_to_label):
     m2.metric("Resource", result["features"].get("resource_type", "—"))
     m3.metric("Public", "Yes" if result["features"].get("public_exposure") else "No")
 
-    t_changes, t_why, t_features, t_prob = st.tabs(["Changes", "Why", "Features", "Scores"])
+    t_changes, t_why, t_compliance, t_features, t_prob = st.tabs(
+        ["Changes", "Why", "Compliance", "Features", "Scores"])
     with t_changes:
         st.dataframe(pd.DataFrame(drift_result["changes"]).astype(str), width="stretch", hide_index=True)
+    with t_compliance:
+        render_compliance_table(drift_result["changes"])
     with t_why:
         additivity = result["additivity_check"]
         st.caption(
@@ -415,6 +419,16 @@ def render_results(result, scenario_ground_truth, int_to_label):
         st.json(result["features"])
     with t_prob:
         render_probability_chart(result["probabilities"])
+
+
+def render_compliance_table(changes):
+    cis_ids = compliance.violated_cis_controls(changes)
+    if cis_ids:
+        st.caption(f"Violates {compliance.CIS_BENCHMARK}: " + ", ".join(f"**{c}**" for c in cis_ids))
+    else:
+        st.caption(f"No {compliance.CIS_BENCHMARK} control covers these changes; "
+                   "see the Security Hub column.")
+    st.dataframe(pd.DataFrame(compliance.compliance_rows(changes)), width="stretch", hide_index=True)
 
 
 RISK_COLORS = {k: v for k, v in sea_glass.RISK_GLASS.items() if k != "No drift"}
