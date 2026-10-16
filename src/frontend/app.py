@@ -626,7 +626,7 @@ def render_live_aws():
         return
 
     for i, f in enumerate(sorted(shown, key=lambda x: x["resource_id"])):
-        label = f["risk_label"] if f["has_drift"] else "No drift"
+        label = findings_analytics.finding_label(f)
         with st.container(border=True, key=f"sg_finding_{i}"):
             st.markdown(
                 f"**{f['resource_type']}** · `{f['resource_id']}` &nbsp; "
