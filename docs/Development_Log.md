@@ -828,3 +828,19 @@ RUN_REAL_AWS_TESTS=1 AWS_TEST_BUCKET="$BUCKET_NAME" pytest tests/test_aws_state.
 
 Lambda, Cognito, DynamoDB, SNS, and automated remediation **not
 implemented** — next milestones.
+
+---
+
+## Dashboard compliance, trend and export features (Student 1)
+
+**Goal:** make the dashboard answer "which rule does this drift break?" and "is our risk getting better or worse?", not just "how risky is this one change?".
+
+**Compliance mapping (`src/frontend/compliance.py`).** Every attribute in the model's feature schema now maps to the CIS AWS Foundations Benchmark v1.4.0 control and the AWS Security Hub (FSBP) control it violates. Each mapping is marked *direct* (the drift is exactly what the control checks, e.g. SSH open to 0.0.0.0/0 → CIS 5.2) or *related* (the drift weakens something the control relies on, e.g. versioning disabled → CIS 2.1.3 MFA Delete). Seven attributes have no CIS control because CIS only covers a foundational subset of AWS; for those the Security Hub control carries the mapping. A test fails if a new attribute is added to `ATTRIBUTE_KNOWLEDGE_BASE` without a mapping.
+
+**Risk trend.** `cloud_client.fetch_history()` reads `GET /findings/{resource}` for each monitored resource, and `findings_analytics.risk_trend()` groups the history by scan time, keeping the worst risk and the drifted/scanned counts. The live tab charts it as a step line. `Review` findings are scored between Medium and High: they need a human, but the model did not call them dangerous.
+
+**Live findings tools.** Summary counts per risk level, filters by risk level and resource type, a CSV export of the filtered findings (including the CIS controls), and an empty state when no finding matches.
+
+**Design rule kept:** all new logic is in plain Python modules with no Streamlit calls, so it is unit-tested directly (`tests/test_compliance.py`, `tests/test_findings_analytics.py`, `tests/test_cloud_client.py`). The UI was also checked headless with Streamlit's `AppTest`, using a faked API for the live tab.
+
+**Test suite:** 247 passed, 1 skipped.
