@@ -64,3 +64,61 @@ def test_risk_trend_sorted_oldest_first_regardless_of_input_order():
 def test_risk_trend_review_label_scored_between_medium_and_high():
     df = fa.risk_trend([_finding("sg", "2026-10-01T00:00:00+00:00", True, "Review")])
     assert fa.RISK_SCORE["Medium"] < df.iloc[0]["worst_score"] < fa.RISK_SCORE["High"]
+
+
+# ---------------------------------------------------------------------------
+# Filters
+# ---------------------------------------------------------------------------
+
+def _mixed():
+    return [_finding("sg", "2026-10-01T00:00:00+00:00", True, "Critical"),
+            _finding("bucket", "2026-10-01T00:00:00+00:00", True, "Medium", "s3_bucket"),
+            _finding("role", "2026-10-01T00:00:00+00:00", False, rtype="iam_policy")]
+
+
+def test_filter_findings_no_selection_keeps_everything():
+    assert len(fa.filter_findings(_mixed())) == 3
+    assert len(fa.filter_findings(_mixed(), labels=[], resource_types=[])) == 3
+
+
+def test_filter_findings_by_label_uses_shown_label():
+    kept = fa.filter_findings(_mixed(), labels=["No drift"])
+    assert [f["resource_id"] for f in kept] == ["role"]
+
+
+def test_filter_findings_by_label_and_type_combined():
+    kept = fa.filter_findings(_mixed(), labels=["Critical", "Medium"], resource_types=["s3_bucket"])
+    assert [f["resource_id"] for f in kept] == ["bucket"]
+
+
+def test_filter_findings_no_match_returns_empty_list():
+    assert fa.filter_findings(_mixed(), labels=["High"]) == []
+
+
+# ---------------------------------------------------------------------------
+# CSV export
+# ---------------------------------------------------------------------------
+
+def test_findings_to_csv_header_and_rows():
+    import csv
+    import io
+
+    rows = list(csv.DictReader(io.StringIO(fa.findings_to_csv(_mixed()))))
+    assert list(rows[0].keys()) == fa.CSV_COLUMNS
+    assert len(rows) == 3
+    assert rows[0]["risk_label"] == "Critical"
+    assert rows[0]["changed_attributes"] == "inbound_ssh.source_cidr"
+    assert rows[0]["cis_controls"] == "5.2"
+    assert rows[2]["risk_label"] == "No drift" and rows[2]["changed_attributes"] == ""
+
+
+def test_findings_to_csv_joins_lists_on_one_line():
+    f = _finding("sg", "2026-10-01T00:00:00+00:00", True, "Critical")
+    f["remediation"] = ["revoked 22 from 0.0.0.0/0", "tagged"]
+    text = fa.findings_to_csv([f])
+    assert len(text.strip().splitlines()) == 2
+    assert "revoked 22 from 0.0.0.0/0; tagged" in text
+
+
+def test_findings_to_csv_empty_has_only_header():
+    assert fa.findings_to_csv([]).strip() == ",".join(fa.CSV_COLUMNS)
