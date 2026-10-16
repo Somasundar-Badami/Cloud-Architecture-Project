@@ -51,3 +51,41 @@ def risk_trend(findings: Iterable[Dict[str, Any]]) -> pd.DataFrame:
     out = worst.merge(counts, on="detected_at").rename(columns={"score": "worst_score", "label": "worst_label"})
     out["drifted_resources"] = out["drifted_resources"].astype(int)
     return out.sort_values("detected_at").reset_index(drop=True)[columns]
+
+
+def filter_findings(findings: Iterable[Dict[str, Any]], labels=None, resource_types=None) -> List[Dict[str, Any]]:
+    """Keeps findings whose shown label and resource type are in the given
+    selections. None (or an empty selection) means 'no filter'."""
+    labels = set(labels or [])
+    resource_types = set(resource_types or [])
+    return [f for f in findings
+            if (not labels or finding_label(f) in labels)
+            and (not resource_types or f.get("resource_type") in resource_types)]
+
+
+CSV_COLUMNS = ["resource_id", "resource_type", "detected_at", "risk_label", "confidence",
+               "changed_attributes", "cis_controls", "unmodelled_attributes", "remediation"]
+
+
+def findings_to_csv(findings: Iterable[Dict[str, Any]]) -> str:
+    """
+    One CSV row per finding, for audit evidence or a spreadsheet. List
+    fields are joined with '; ' so every row stays a single line.
+    """
+    from compliance import violated_cis_controls
+
+    rows = []
+    for f in findings:
+        changes = f.get("changes") or []
+        rows.append({
+            "resource_id": f.get("resource_id"),
+            "resource_type": f.get("resource_type"),
+            "detected_at": f.get("detected_at"),
+            "risk_label": finding_label(f),
+            "confidence": f.get("confidence"),
+            "changed_attributes": "; ".join(c["attribute"] for c in changes),
+            "cis_controls": "; ".join(violated_cis_controls(changes)),
+            "unmodelled_attributes": "; ".join(f.get("unmodelled_attributes") or []),
+            "remediation": "; ".join(f.get("remediation") or []),
+        })
+    return pd.DataFrame(rows, columns=CSV_COLUMNS).to_csv(index=False)
