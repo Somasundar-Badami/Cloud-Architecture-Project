@@ -583,6 +583,9 @@ def render_live_aws():
             )
             if f["has_drift"]:
                 st.table(pd.DataFrame(f["changes"]).astype(str))
+                cis_ids = compliance.violated_cis_controls(f["changes"])
+                if cis_ids:
+                    st.caption("CIS controls violated: " + ", ".join(cis_ids))
                 if f.get("probabilities"):
                     render_probability_chart(f["probabilities"])
                 if f.get("unmodelled_attributes"):
