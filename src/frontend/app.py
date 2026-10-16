@@ -613,6 +613,10 @@ def render_live_aws():
             else:
                 render_risk_trend_chart(trend)
 
+    counts = findings_analytics.label_counts(findings)
+    for col, (label, n) in zip(st.columns(len(counts)), counts.items()):
+        col.metric(label, n)
+
     f1, f2 = st.columns(2)
     label_filter = f1.multiselect("Risk level", list(sea_glass.RISK_GLASS), placeholder="All risk levels")
     type_filter = f2.multiselect("Resource type", RESOURCE_TYPE_OPTIONS, placeholder="All resource types")

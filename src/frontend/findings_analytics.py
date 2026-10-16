@@ -53,6 +53,15 @@ def risk_trend(findings: Iterable[Dict[str, Any]]) -> pd.DataFrame:
     return out.sort_values("detected_at").reset_index(drop=True)[columns]
 
 
+def label_counts(findings: Iterable[Dict[str, Any]]) -> Dict[str, int]:
+    """How many findings show each label, in severity order (worst first).
+    Labels with no findings are kept with a count of 0."""
+    counts = {k: 0 for k in sorted(RISK_SCORE, key=RISK_SCORE.get, reverse=True)}
+    for f in findings:
+        counts[finding_label(f)] = counts.get(finding_label(f), 0) + 1
+    return counts
+
+
 def filter_findings(findings: Iterable[Dict[str, Any]], labels=None, resource_types=None) -> List[Dict[str, Any]]:
     """Keeps findings whose shown label and resource type are in the given
     selections. None (or an empty selection) means 'no filter'."""
