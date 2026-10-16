@@ -50,6 +50,7 @@ from shap_explainability import (  # noqa: E402
 )
 import sea_glass  # noqa: E402  (presentation only: CSS/HTML strings)
 import compliance  # noqa: E402
+import findings_analytics  # noqa: E402
 
 MODELS_DIR = project_paths.MODELS_DIR
 RESULTS_DIR = project_paths.RESULTS_DIR
@@ -458,6 +459,33 @@ def render_probability_chart(probabilities):
     st.altair_chart(chart, width="stretch")
 
 
+def render_risk_trend_chart(trend):
+    """Worst risk per scan over time; each point is coloured by its label."""
+    import altair as alt
+
+    labels = list(sea_glass.RISK_GLASS)
+    base = alt.Chart(trend).encode(
+        x=alt.X("detected_at:T", title=None),
+        y=alt.Y("worst_score:Q", title="Worst risk", scale=alt.Scale(domain=[0, 4]),
+                axis=alt.Axis(values=list(range(5)),
+                              labelExpr="['No drift','Low','Medium','High','Critical'][datum.value]")),
+    )
+    line = base.mark_line(interpolate="step-after", color=sea_glass.PALETTE["mist"], opacity=.6)
+    points = base.mark_circle(size=90, opacity=.9).encode(
+        color=alt.Color("worst_label:N", legend=None,
+                        scale=alt.Scale(domain=labels, range=[sea_glass.RISK_GLASS[k] for k in labels])),
+        tooltip=[alt.Tooltip("detected_at:T", title="Scan", format="%Y-%m-%d %H:%M"),
+                 alt.Tooltip("worst_label:N", title="Worst risk"),
+                 alt.Tooltip("drifted_resources:Q", title="Drifted"),
+                 alt.Tooltip("scanned_resources:Q", title="Scanned")],
+    )
+    chart = ((line + points).properties(height=200, background="transparent")
+             .configure_view(strokeWidth=0)
+             .configure_axis(labelColor=sea_glass.PALETTE["ink"], titleColor=sea_glass.PALETTE["mist"],
+                             gridColor="rgba(34,54,61,.08)", domain=False))
+    st.altair_chart(chart, width="stretch")
+
+
 def render_offline_analyzer():
     left, right = st.columns([5, 6], gap="large")
 
@@ -571,6 +599,19 @@ def render_live_aws():
     if not findings:
         st.info("No scans recorded yet. Click **Scan now**.")
         return
+
+    if st.toggle("Show risk trend", help="Loads up to 50 past scans per resource."):
+        try:
+            history = cloud_client.fetch_history(cfg["api_url"], st.session_state["id_token"],
+                                                 [f["resource_id"] for f in findings])
+        except cloud_client.CloudError as e:
+            st.error(str(e))
+        else:
+            trend = findings_analytics.risk_trend(history)
+            if len(trend) < 2:
+                st.caption("The trend needs at least two scans. Click **Scan now** again later.")
+            else:
+                render_risk_trend_chart(trend)
 
     for i, f in enumerate(sorted(findings, key=lambda x: x["resource_id"])):
         label = f["risk_label"] if f["has_drift"] else "No drift"
