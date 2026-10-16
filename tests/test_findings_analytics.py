@@ -122,3 +122,19 @@ def test_findings_to_csv_joins_lists_on_one_line():
 
 def test_findings_to_csv_empty_has_only_header():
     assert fa.findings_to_csv([]).strip() == ",".join(fa.CSV_COLUMNS)
+
+
+# ---------------------------------------------------------------------------
+# Summary counts
+# ---------------------------------------------------------------------------
+
+def test_label_counts_worst_first_and_zero_filled():
+    counts = fa.label_counts(_mixed())
+    assert list(counts)[0] == "Critical" and list(counts)[-1] == "No drift"
+    assert counts["Critical"] == 1 and counts["Medium"] == 1 and counts["No drift"] == 1
+    assert counts["High"] == 0
+    assert sum(counts.values()) == 3
+
+
+def test_label_counts_empty():
+    assert set(fa.label_counts([]).values()) == {0}
