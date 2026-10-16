@@ -38,7 +38,7 @@ InfraDriftGuard continuously compares the infrastructure you **declared in Terra
 ├── results/              metrics, confusion matrices, SHAP plots, screenshots
 ├── presentation/         review slides
 ├── scripts/              diagram + document generators
-└── tests/                219 pytest tests (moto-simulated AWS, no account needed)
+└── tests/                248 pytest tests (moto-simulated AWS, no account needed)
 ```
 
 ## Quick start (local, no AWS account)
@@ -48,9 +48,22 @@ First time on a new laptop? Follow **[docs/TEAMMATE_SETUP.md](docs/TEAMMATE_SETU
 ```bash
 python -m venv venv && venv\Scripts\activate      # Linux/macOS: source venv/bin/activate
 pip install -r requirements.txt
-python -m pytest tests -q                           # 218 passed, 1 skipped
+python -m pytest tests -q                           # 247 passed, 1 skipped
 streamlit run src/frontend/app.py                   # http://localhost:8501
 ```
+
+### Using an existing virtual environment (Windows)
+
+If the dependencies are already installed in a shared venv such as `D:\venv`, activate that one instead of creating a new venv inside the repo:
+
+```powershell
+D:\venv\Scripts\Activate.ps1          # cmd.exe: D:\venv\Scripts\activate.bat · Git Bash: source /d/venv/Scripts/activate
+cd D:\Coding\Cloud-Project-New
+python -m pytest tests -q
+python -m streamlit run src/frontend/app.py
+```
+
+If PowerShell refuses to run `Activate.ps1`, run `Set-ExecutionPolicy -Scope CurrentUser RemoteSigned` once. Use `python -m streamlit` rather than `streamlit` so the venv's copy is used even if another Python is on `PATH`.
 
 Rebuild the pipeline from scratch:
 
