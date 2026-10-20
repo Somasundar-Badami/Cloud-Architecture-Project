@@ -163,6 +163,7 @@ def build_preprocessor():
             ("passthrough", "passthrough", BOOLEAN_FEATURES + NUMERIC_FEATURES),
         ],
         remainder="drop",
+        sparse_threshold=0.0,  # always dense: one-hot block turns sparse with many attributes
     )
     return preprocessor
 

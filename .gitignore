@@ -13,3 +13,6 @@ src/aws/terraform/outputs.json
 ~$*
 # Streamlit secrets (never commit)
 .streamlit/secrets.toml
+
+_backup_before_expansion/
+dataset_v2/

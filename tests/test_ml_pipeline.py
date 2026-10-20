@@ -43,7 +43,7 @@ from ml_pipeline import (  # noqa: E402
 def test_load_dataset_returns_dataframe_with_expected_row_count():
     df = load_dataset()
     assert isinstance(df, pd.DataFrame)
-    assert 600 <= len(df) <= 900
+    assert 600 <= len(df) <= 1500
 
 
 def test_load_dataset_change_magnitude_none_string_not_corrupted_to_nan():

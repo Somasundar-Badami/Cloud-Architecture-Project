@@ -40,7 +40,7 @@ DATASET_CSV_PATH = os.path.join(DATA_DIR, "dataset.csv")
 REPORT_PATH = os.path.join(DATA_DIR, "dataset_validation_report.json")
 
 ALLOWED_VALUES = {
-    "resource_type": {"s3_bucket", "security_group", "iam_policy"},
+    "resource_type": {"s3_bucket", "security_group", "iam_policy", "rds_instance"},
     "security_sensitivity": {"Low", "Medium", "High"},
     "change_magnitude": {"None", "Low", "Medium", "High"},
     "port_exposure": {"0.0.0.0/0", "internal", "none"},
@@ -74,7 +74,7 @@ def load_csv_rows():
 def check_total_count(records):
     return {
         "total_records": len(records),
-        "within_target_range_600_900": 600 <= len(records) <= 900,
+        "within_target_range_600_900": 600 <= len(records) <= 1500,
     }
 
 

@@ -70,11 +70,11 @@ def test_label_mapping_loaded_with_severity_order():
 
 def test_models_are_the_same_objects_saved_by_ml_pipeline_not_retrained():
     """Sanity check: primary model's feature count matches the known
-    30-column transformed feature space from prior milestones -- if this
+    48-column transformed feature space from prior milestones -- if this
     module had accidentally retrained on a different feature set, this
     would fail."""
     rf = _ARTIFACTS["random_forest_primary"]
-    assert rf.n_features_in_ == 30
+    assert rf.n_features_in_ == 48
 
 
 # ---------------------------------------------------------------------------
@@ -90,7 +90,7 @@ def test_feature_name_alignment_passes_for_primary_preprocessor():
 
 def test_feature_names_are_non_empty_strings_in_expected_order():
     _, feature_names = transform_with_saved_preprocessor(_ARTIFACTS["preprocessor_primary"], _X)
-    assert len(feature_names) == 30
+    assert len(feature_names) == 48
     assert all(isinstance(f, str) and len(f) > 0 for f in feature_names)
     # Ordinal columns must come first (ColumnTransformer preserves
     # transformer definition order), confirmed by exact expected prefix.
