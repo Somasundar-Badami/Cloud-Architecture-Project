@@ -252,14 +252,14 @@ def test_unknown_attribute_handled_without_crashing():
 
 
 # ---------------------------------------------------------------------------
-# Predefined scenario coverage (all 20 scenarios generate valid, runnable input)
+# Predefined scenario coverage (all 37 scenarios generate valid, runnable input)
 # ---------------------------------------------------------------------------
 
-def test_all_20_predefined_scenarios_generate_valid_json_and_run_without_error():
+def test_all_predefined_scenarios_generate_valid_json_and_run_without_error():
     import app
     artifacts = app.load_model_artifacts()
     options = app.get_predefined_scenario_options()
-    assert len(options) == 20
+    assert len(options) == 37  # 20 approved + 17 from the expansion pack
 
     for option in options:
         desired, actual, resource_type, ground_truth = app.generate_scenario_json(option["scenario_id"])

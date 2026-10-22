@@ -1,34 +1,51 @@
 {
   "scenario_group_split": {
     "train_scenario_ids": [
-      "E3",
+      "E1",
+      "E10",
+      "E11",
+      "E2",
       "E4",
-      "E5",
       "E6",
       "E7",
+      "E8",
+      "E9",
       "I1",
       "I2",
-      "I3",
       "I4",
       "I5",
       "I6",
-      "S1",
-      "S2",
+      "I8",
+      "I9",
+      "R1",
+      "R2",
+      "R3",
+      "R4",
+      "R5",
+      "S10",
+      "S11",
+      "S3id",
       "S4",
+      "S5",
       "S6",
-      "S7"
+      "S7",
+      "S9"
     ],
     "test_scenario_ids": [
-      "E1",
-      "E2",
-      "S3id",
-      "S5"
+      "E3",
+      "E5",
+      "I3",
+      "I7",
+      "R6",
+      "S1",
+      "S2",
+      "S8"
     ],
-    "num_train_scenarios": 16,
-    "num_test_scenarios": 4,
+    "num_train_scenarios": 29,
+    "num_test_scenarios": 8,
     "leakage_check": {
-      "num_scenarios_in_train": 16,
-      "num_scenarios_in_test": 4,
+      "num_scenarios_in_train": 29,
+      "num_scenarios_in_test": 8,
       "scenario_ids_appearing_in_both_train_and_test": [],
       "num_scenarios_leaked": 0,
       "num_group_ids_appearing_in_both_train_and_test": 0
@@ -36,123 +53,187 @@
   },
   "class_distribution": {
     "train_class_distribution": {
-      "Low": 180,
-      "Medium": 132,
-      "High": 140,
-      "Critical": 140
+      "Low": 170,
+      "Medium": 320,
+      "High": 245,
+      "Critical": 204
     },
     "test_class_distribution": {
-      "Low": 0,
-      "Medium": 44,
-      "High": 35,
+      "Low": 130,
+      "Medium": 24,
+      "High": 105,
       "Critical": 40
     },
-    "train_total": 592,
-    "test_total": 119,
-    "classes_absent_from_test": [
-      "Low"
-    ],
+    "train_total": 939,
+    "test_total": 299,
+    "classes_absent_from_test": [],
     "classes_absent_from_train": []
   },
   "resource_type_risk_label_combinations": {
     "train_crosstab": {
       "iam_policy": {
         "Low": 0,
-        "Medium": 0,
+        "Medium": 24,
         "High": 70,
         "Critical": 80
       },
+      "rds_instance": {
+        "Low": 40,
+        "Medium": 48,
+        "High": 35,
+        "Critical": 32
+      },
       "s3_bucket": {
         "Low": 90,
-        "Medium": 44,
-        "High": 0,
-        "Critical": 60
+        "Medium": 136,
+        "High": 70,
+        "Critical": 20
       },
       "security_group": {
-        "Low": 90,
-        "Medium": 88,
+        "Low": 40,
+        "Medium": 112,
         "High": 70,
-        "Critical": 0
+        "Critical": 72
       }
     },
     "combinations_in_test_but_absent_from_train": [
-      "s3_bucket + High",
-      "security_group + Critical"
+      "iam_policy + Low"
     ],
     "combinations_in_train_but_absent_from_test": [
       "iam_policy + Critical",
-      "iam_policy + High",
-      "s3_bucket + Critical",
+      "iam_policy + Medium",
+      "rds_instance + Critical",
+      "rds_instance + Low",
+      "rds_instance + Medium",
+      "s3_bucket + High",
       "s3_bucket + Low",
-      "security_group + High",
-      "security_group + Low",
+      "security_group + Critical",
       "security_group + Medium"
     ],
     "combinations_in_both": [
-      "s3_bucket + Medium"
+      "iam_policy + High",
+      "rds_instance + High",
+      "s3_bucket + Critical",
+      "s3_bucket + Medium",
+      "security_group + High",
+      "security_group + Low"
     ],
     "note": "'absent from train' combinations are the important ones for generalization: they mean the model, for this split, has NEVER seen that (resource_type, risk_label) pairing during training and must extrapolate to classify it correctly at test time."
   },
   "unseen_combination_model_impact": {
     "random_forest_per_scenario": {
-      "E1": {
-        "true_label": "Critical",
-        "n_records": 20,
-        "prediction_distribution": {
-          "High": 20
-        },
-        "n_correct": 0,
-        "accuracy_for_this_scenario": 0.0
-      },
-      "E2": {
-        "true_label": "Critical",
-        "n_records": 20,
-        "prediction_distribution": {
-          "High": 20
-        },
-        "n_correct": 0,
-        "accuracy_for_this_scenario": 0.0
-      },
-      "S3id": {
+      "E3": {
         "true_label": "High",
         "n_records": 35,
         "prediction_distribution": {
-          "Medium": 11,
-          "Critical": 24
+          "High": 35
         },
-        "n_correct": 0,
-        "accuracy_for_this_scenario": 0.0
+        "n_correct": 35,
+        "accuracy_for_this_scenario": 1.0
       },
-      "S5": {
-        "true_label": "Medium",
-        "n_records": 44,
+      "E5": {
+        "true_label": "Low",
+        "n_records": 90,
         "prediction_distribution": {
-          "Medium": 44
+          "Low": 90
         },
-        "n_correct": 44,
+        "n_correct": 90,
+        "accuracy_for_this_scenario": 1.0
+      },
+      "I3": {
+        "true_label": "High",
+        "n_records": 35,
+        "prediction_distribution": {
+          "High": 35
+        },
+        "n_correct": 35,
+        "accuracy_for_this_scenario": 1.0
+      },
+      "I7": {
+        "true_label": "Low",
+        "n_records": 40,
+        "prediction_distribution": {
+          "Low": 40
+        },
+        "n_correct": 40,
+        "accuracy_for_this_scenario": 1.0
+      },
+      "R6": {
+        "true_label": "High",
+        "n_records": 35,
+        "prediction_distribution": {
+          "Medium": 29,
+          "High": 6
+        },
+        "n_correct": 6,
+        "accuracy_for_this_scenario": 0.1714
+      },
+      "S1": {
+        "true_label": "Critical",
+        "n_records": 20,
+        "prediction_distribution": {
+          "Critical": 20
+        },
+        "n_correct": 20,
+        "accuracy_for_this_scenario": 1.0
+      },
+      "S2": {
+        "true_label": "Critical",
+        "n_records": 20,
+        "prediction_distribution": {
+          "Critical": 20
+        },
+        "n_correct": 20,
+        "accuracy_for_this_scenario": 1.0
+      },
+      "S8": {
+        "true_label": "Medium",
+        "n_records": 24,
+        "prediction_distribution": {
+          "Medium": 24
+        },
+        "n_correct": 24,
         "accuracy_for_this_scenario": 1.0
       }
     },
     "decision_tree_per_scenario": {
-      "E1": {
-        "true_label": "Critical",
-        "n_records": 20,
+      "E3": {
+        "true_label": "High",
+        "n_records": 35,
         "prediction_distribution": {
-          "Critical": 20
+          "High": 35
         },
-        "n_correct": 20,
+        "n_correct": 35,
         "accuracy_for_this_scenario": 1.0
       },
-      "E2": {
-        "true_label": "Critical",
-        "n_records": 20,
+      "E5": {
+        "true_label": "Low",
+        "n_records": 90,
         "prediction_distribution": {
-          "Critical": 20
+          "Low": 90
         },
-        "n_correct": 20,
+        "n_correct": 90,
         "accuracy_for_this_scenario": 1.0
       },
-      "S3id": {
+      "I3": {
+        "true_label": "High",
+        "n_records": 35,
+        "prediction_distribution": {
+          "Medium": 35
+        },
+        "n_correct": 0,
+        "accuracy_for_this_scenario": 0.0
+      },
+      "I7": {
+        "true_label": "Low",
+        "n_records": 40,
+        "prediction_distribution": {
+          "Low": 40
+        },
+        "n_correct": 40,
+        "accuracy_for_this_scenario": 1.0
+      },
+      "R6": {
         "true_label": "High",
         "n_records": 35,
         "prediction_distribution": {
@@ -161,13 +242,31 @@
         "n_correct": 0,
         "accuracy_for_this_scenario": 0.0
       },
-      "S5": {
-        "true_label": "Medium",
-        "n_records": 44,
+      "S1": {
+        "true_label": "Critical",
+        "n_records": 20,
         "prediction_distribution": {
-          "Medium": 44
+          "Critical": 20
         },
-        "n_correct": 44,
+        "n_correct": 20,
+        "accuracy_for_this_scenario": 1.0
+      },
+      "S2": {
+        "true_label": "Critical",
+        "n_records": 20,
+        "prediction_distribution": {
+          "Critical": 20
+        },
+        "n_correct": 20,
+        "accuracy_for_this_scenario": 1.0
+      },
+      "S8": {
+        "true_label": "Medium",
+        "n_records": 24,
+        "prediction_distribution": {
+          "Medium": 24
+        },
+        "n_correct": 24,
         "accuracy_for_this_scenario": 1.0
       }
     },
@@ -224,13 +323,14 @@
     ],
     "targeted_holdout_experiment": {
       "description": "Train on all 19 other scenarios (E7's records entirely removed from training, so its specific changed_attribute value 'peer_sg_reference' is never seen), test only on E7's 44 records.",
-      "n_train": 667,
+      "n_train": 1194,
       "n_test_E7_only": 44,
       "true_label_for_all_E7_records": "Medium",
       "random_forest_prediction_distribution": {
-        "High": 44
+        "Medium": 13,
+        "High": 31
       },
-      "random_forest_correct_rate": 0.0,
+      "random_forest_correct_rate": 0.2955,
       "decision_tree_prediction_distribution": {
         "High": 44
       },
@@ -240,13 +340,13 @@
   },
   "changed_attribute_encoding_check": {
     "changed_attribute_is_in_nominal_onehot_transformer": true,
-    "num_onehot_columns_for_changed_attribute": 20,
+    "num_onehot_columns_for_changed_attribute": 37,
     "example_onehot_column_names": [
+      "nominal__changed_attribute_access_key_count",
       "nominal__changed_attribute_acl",
       "nominal__changed_attribute_actions+resources",
-      "nominal__changed_attribute_block_public_access",
-      "nominal__changed_attribute_bucket_policy_principal",
-      "nominal__changed_attribute_effect"
+      "nominal__changed_attribute_backup_retention_days",
+      "nominal__changed_attribute_block_public_access"
     ],
     "seen_category_value_changes_model_input": true,
     "unseen_category_zeroes_only_its_own_onehot_block": true,

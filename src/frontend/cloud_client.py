@@ -15,6 +15,7 @@ Configuration is read, in order, from:
 import json
 import os
 import urllib.error
+import urllib.parse
 import urllib.request
 from typing import Any, Dict, Optional
 
@@ -91,3 +92,13 @@ def call_api(api_url: str, id_token: str, method: str, path: str) -> Dict[str, A
         raise CloudError(f"API error {e.code}: {e.read().decode(errors='replace')}")
     except urllib.error.URLError as e:
         raise CloudError(f"Could not reach the API: {e.reason}")
+
+
+def fetch_history(api_url: str, id_token: str, resource_ids, limit_per_resource: int = 50):
+    """Full scan history for each resource (GET /findings/{resource}),
+    flattened into one list. The API returns at most 50 items each."""
+    history = []
+    for rid in resource_ids:
+        body = call_api(api_url, id_token, "GET", "/findings/" + urllib.parse.quote(rid, safe=""))
+        history.extend(body.get("history", [])[:limit_per_resource])
+    return history

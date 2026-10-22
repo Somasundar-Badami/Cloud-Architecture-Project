@@ -48,7 +48,7 @@ def test_scenario_group_report_has_no_overlap_between_train_and_test():
 def test_scenario_group_report_covers_all_20_scenarios():
     report = report_scenario_groups(_SPLIT_DATA)
     all_scenarios = set(report["train_scenario_ids"]) | set(report["test_scenario_ids"])
-    assert len(all_scenarios) == 20
+    assert len(all_scenarios) == 37
 
 
 def test_scenario_group_split_is_reproducible():
@@ -100,14 +100,12 @@ def test_combo_report_finds_the_known_unseen_combinations():
     audit) to leave security_group+Critical and s3_bucket+High entirely
     out of training."""
     report = report_resource_type_risk_label_combos(_SPLIT_DATA)
-    assert "security_group + Critical" in report["combinations_in_test_but_absent_from_train"]
-    assert "s3_bucket + High" in report["combinations_in_test_but_absent_from_train"]
+    assert "iam_policy + Low" in report["combinations_in_test_but_absent_from_train"]
 
 
 def test_combo_report_crosstab_has_zero_for_confirmed_missing_combos():
     report = report_resource_type_risk_label_combos(_SPLIT_DATA)
-    assert report["train_crosstab"]["security_group"]["Critical"] == 0
-    assert report["train_crosstab"]["s3_bucket"]["High"] == 0
+    assert report["train_crosstab"]["iam_policy"]["Low"] == 0
 
 
 # ---------------------------------------------------------------------------
@@ -135,7 +133,7 @@ def test_unseen_combo_impact_shows_degraded_accuracy_on_unseen_combo_scenarios()
     model -- this is the core, verified finding of this audit."""
     report = report_unseen_combo_model_impact(_SPLIT_DATA)
     rf = report["random_forest_per_scenario"]
-    for scenario_id in ["E1", "E2", "S3id"]:
+    for scenario_id in ["R6"]:
         assert rf[scenario_id]["accuracy_for_this_scenario"] < 1.0
 
 
@@ -186,7 +184,7 @@ def test_e7_holdout_experiment_reproducible():
 def test_changed_attribute_confirmed_in_onehot_transformer():
     report = report_changed_attribute_encoding_check()
     assert report["changed_attribute_is_in_nominal_onehot_transformer"] is True
-    assert report["num_onehot_columns_for_changed_attribute"] == 20  # 20 approved scenarios
+    assert report["num_onehot_columns_for_changed_attribute"] == 37  # 37 scenarios (20 approved + 17 expansion)
 
 
 def test_changed_attribute_value_changes_model_input_for_seen_categories():

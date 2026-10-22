@@ -1,0 +1,10 @@
+# Dashboard theme (extra styling lives in src/frontend/sea_glass.py)
+[theme]
+base = "light"
+primaryColor = "#0F5C4D"
+backgroundColor = "#FAF8F3"
+secondaryBackgroundColor = "#FFFFFF"
+textColor = "#1B1B1F"
+font = "sans serif"
+[client]
+showSidebarNavigation = false

@@ -1,0 +1,162 @@
+{
+  "n_records": 8395,
+  "n_repos": 76,
+  "n_checks": 102,
+  "label_counts": {
+    "High": 3776,
+    "Low": 2917,
+    "Medium": 931,
+    "Critical": 771
+  },
+  "A_random_5fold": {
+    "macro_f1_mean": 0.888,
+    "macro_f1_min": 0.882,
+    "macro_f1_max": 0.903,
+    "accuracy_pooled": 0.897,
+    "macro_f1_pooled": 0.888,
+    "random_guess_macro_f1": 0.251,
+    "confusion_matrix": [
+      [
+        2661,
+        80,
+        73,
+        103
+      ],
+      [
+        1,
+        894,
+        25,
+        11
+      ],
+      [
+        343,
+        120,
+        3260,
+        53
+      ],
+      [
+        33,
+        8,
+        12,
+        718
+      ]
+    ],
+    "confusion_labels": [
+      "Low",
+      "Medium",
+      "High",
+      "Critical"
+    ]
+  },
+  "B_unseen_repos": {
+    "macro_f1_mean": 0.878,
+    "macro_f1_min": 0.849,
+    "macro_f1_max": 0.924,
+    "accuracy_pooled": 0.897,
+    "macro_f1_pooled": 0.885,
+    "random_guess_macro_f1": 0.243,
+    "confusion_matrix": [
+      [
+        2683,
+        95,
+        80,
+        59
+      ],
+      [
+        4,
+        892,
+        28,
+        7
+      ],
+      [
+        302,
+        149,
+        3275,
+        50
+      ],
+      [
+        56,
+        14,
+        18,
+        683
+      ]
+    ],
+    "confusion_labels": [
+      "Low",
+      "Medium",
+      "High",
+      "Critical"
+    ]
+  },
+  "C_unseen_check_types": {
+    "macro_f1_mean": 0.385,
+    "macro_f1_min": 0.188,
+    "macro_f1_max": 0.533,
+    "accuracy_pooled": 0.492,
+    "macro_f1_pooled": 0.45,
+    "random_guess_macro_f1": 0.204,
+    "confusion_matrix": [
+      [
+        800,
+        100,
+        1579,
+        438
+      ],
+      [
+        70,
+        197,
+        650,
+        14
+      ],
+      [
+        460,
+        706,
+        2503,
+        107
+      ],
+      [
+        61,
+        13,
+        69,
+        628
+      ]
+    ],
+    "confusion_labels": [
+      "Low",
+      "Medium",
+      "High",
+      "Critical"
+    ]
+  },
+  "B_unseen_repos_without_goat_repos": {
+    "macro_f1_mean": 0.89,
+    "macro_f1_min": 0.851,
+    "macro_f1_max": 0.914,
+    "accuracy_pooled": 0.904,
+    "macro_f1_pooled": 0.893,
+    "random_guess_macro_f1": 0.255
+  },
+  "shap_mean_abs_by_feature": {
+    "resource_type": 0.2213,
+    "changed_attribute": 0.0831,
+    "public_exposure": 0.0652,
+    "security_sensitivity": 0.054,
+    "encryption_change": 0.0521,
+    "port_exposure": 0.0506,
+    "privilege_change": 0.0242,
+    "drift_frequency": 0.005,
+    "change_magnitude": 0.0047
+  },
+  "fixed_later_model": {
+    "n_records": 3596,
+    "fix_rate": 0.349,
+    "macro_f1_unseen_repos": 0.505,
+    "roc_auc_unseen_repos": 0.576,
+    "fix_rate_by_tfsec_severity": {
+      "Critical": 0.334,
+      "High": 0.373,
+      "Low": 0.35,
+      "Medium": 0.255
+    }
+  }
+}

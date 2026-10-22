@@ -38,6 +38,7 @@ import matplotlib.pyplot as plt
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 import project_paths  # noqa: E402
+import remediation  # noqa: E402
 
 from drift_engine import detect_drift  # noqa: E402
 from feature_extraction import extract_features  # noqa: E402
@@ -48,11 +49,14 @@ from shap_explainability import (  # noqa: E402
     compute_shap_values,
     check_additivity,
 )
+import sea_glass  # noqa: E402  (presentation only: CSS/HTML strings)
+import compliance  # noqa: E402
+import findings_analytics  # noqa: E402
 
 MODELS_DIR = project_paths.MODELS_DIR
 RESULTS_DIR = project_paths.RESULTS_DIR
 
-RESOURCE_TYPE_OPTIONS = ["s3_bucket", "security_group", "iam_policy"]
+RESOURCE_TYPE_OPTIONS = ["s3_bucket", "security_group", "iam_policy", "rds_instance"]
 
 
 # ---------------------------------------------------------------------------
@@ -179,9 +183,19 @@ def run_drift_and_risk_pipeline(desired_state, actual_state, resource_type_hint,
     }
 
 
+def _ensure_expansion_scenarios():
+    """Adds the 17 expansion scenarios (S8-S11, E8-E11, I7-I9, R1-R6) to the registry; safe to call repeatedly."""
+    try:
+        import expansion_scenarios
+    except ImportError:
+        return
+    expansion_scenarios.install()
+
+
 def get_predefined_scenario_options():
     """Reads the demonstration scenario list directly from the existing
     SCENARIO_REGISTRY -- not a separately maintained/duplicated list."""
+    _ensure_expansion_scenarios()
     return [
         {
             "scenario_id": s["scenario_id"],
@@ -201,6 +215,7 @@ def generate_scenario_json(scenario_id, seed=42, entity_id=1):
     dataset_generator.py uses, not a reimplementation. Deterministic given
     a fixed seed, so the same scenario always shows the same example.
     """
+    _ensure_expansion_scenarios()
     scenario = next((s for s in SCENARIO_REGISTRY if s["scenario_id"] == scenario_id), None)
     if scenario is None:
         raise ValueError(f"Unknown scenario_id: {scenario_id}")
@@ -245,13 +260,11 @@ def _fmt_pct(value):
 # Streamlit UI -- only executes when run via `streamlit run app.py`
 # ---------------------------------------------------------------------------
 
-def render_sidebar():
-    st.sidebar.title("InfraDriftGuard")
-    st.sidebar.markdown("**AI-Based Infrastructure Drift Detection Framework using Explainable AI**")
-    st.sidebar.markdown("---")
+def render_model_info():
+    st.markdown("**AI-Based Infrastructure Drift Detection Framework using Explainable AI**")
 
-    st.sidebar.subheader("Model")
-    st.sidebar.markdown(
+    st.subheader("Model")
+    st.markdown(
         "- **Algorithm:** Random Forest (**primary** model)\n"
         "- **Trees:** 200 estimators\n"
         "- **Trained on:** Split A (stratified random split)\n"
@@ -259,18 +272,18 @@ def render_sidebar():
         "- **Explainability:** SHAP `TreeExplainer`"
     )
 
-    st.sidebar.subheader("Dataset")
-    st.sidebar.markdown(
-        "- 711 **synthetic** records\n"
-        "- 20 approved drift scenarios (S3, EC2 Security Groups, IAM)\n"
+    st.subheader("Dataset")
+    st.markdown(
+        "- 1,238 **synthetic** records\n"
+        "- 37 drift scenarios (S3, EC2 Security Groups, IAM, RDS)\n"
         "- 4 risk levels: Low / Medium / High / Critical\n"
         "- No real AWS Config data — see literature survey milestone"
     )
 
-    st.sidebar.subheader("⚠️ Important Evaluation Limitation")
+    st.subheader("Evaluation limitation")
     summary = load_evaluation_limitation_summary()
     if summary:
-        st.sidebar.markdown(
+        st.markdown(
             f"- Record-level split accuracy: **{_fmt_pct(summary.get('split_a_accuracy'))}** "
             f"— inflated by scenario leakage (near-duplicate records land on both "
             f"sides of the split)\n"
@@ -280,68 +293,236 @@ def render_sidebar():
             f"correctly **{_fmt_pct(summary.get('e7_holdout_rf_correct_rate'))}** of the time"
         )
     else:
-        st.sidebar.markdown(
+        st.markdown(
             "_Evaluation artifacts not found — run `src/ml_pipeline.py` and "
             "`src/ml_evaluation_audit.py` first._"
         )
-    st.sidebar.caption("Full analysis: `results/ml_evaluation_audit.json` and `README.md`.")
+    st.caption("Full analysis: `results/ml_evaluation_audit.json` and `README.md`.")
 
 
-def render_header():
-    st.title("InfraDriftGuard — AI-Based Infrastructure Drift Detection")
-    st.caption(
-        "**Drift analyzer** runs the trained model locally on any desired/actual JSON. "
-        "**Live AWS findings** shows what the deployed Lambda detector found in your AWS account."
+REPO_URL = "https://github.com/Somasundar-Badami/Cloud-Architecture-Project"
+
+
+def _metric(split, model):
+    path = os.path.join(RESULTS_DIR, "metrics.json")
+    if not os.path.exists(path):
+        return None
+    with open(path) as f:
+        return json.load(f)[split][model]["accuracy"]
+
+
+def render_hero():
+    st.markdown(
+        sea_glass.hero_html(
+            "Cloud infrastructure · explainable AI",
+            "InfraDriftGuard",
+            "It catches the moment live AWS resources drift away from their Terraform design, "
+            "and tells you which drift is dangerous, why, and how to fix it.",
+            [("1,238", "training records"), ("37", "drift scenarios"), ("4", "AWS services"), ("4", "risk levels")],
+            [("View the code on GitHub", REPO_URL), ("Try the live demo", "#live-demo")],
+        ),
+        unsafe_allow_html=True,
     )
-    st.info(
-        "The risk model is trained on 711 synthetic records from 20 hand-authored scenarios. "
-        "Its record-level accuracy does not measure real-world generalization — see the "
-        "Evaluation Limitation note in the sidebar."
+
+
+def render_video_section():
+    st.markdown(sea_glass.section_html("Watch · 36 seconds", "InfraDriftGuard in under a minute"),
+                unsafe_allow_html=True)
+    if os.path.isfile(PITCH_VIDEO):
+        st.video(PITCH_VIDEO)
+        with open(PITCH_VIDEO, "rb") as fh:
+            st.download_button("Download the video", fh, file_name="InfraDriftGuard_pitch.mp4", mime="video/mp4")
+    else:
+        st.info("Pitch video not found. Expected at src/frontend/assets/pitch.mp4")
+
+
+def render_live_demo_section():
+    st.markdown(sea_glass.section_html(
+        "Live · the model running in your browser", "Watch InfraDriftGuard score a drift",
+        "Pick one of the 37 scenarios (or paste your own JSON), press Analyze drift, and read the risk, "
+        "the SHAP explanation, the recommended fix and the compliance mapping.", anchor="live-demo"),
+        unsafe_allow_html=True)
+    render_offline_analyzer()
+
+
+def render_method_section():
+    st.markdown(sea_glass.section_html("Method", "How InfraDriftGuard works"), unsafe_allow_html=True)
+    st.markdown(sea_glass.steps_html([
+        ("Read both states", "Load the desired state from Terraform and the actual state from AWS (S3, EC2 security groups, IAM, RDS)."),
+        ("Find the drift", "Compare them attribute by attribute and list every change."),
+        ("Score the risk", "Turn each change into 9 features and let a 200-tree Random Forest pick Low, Medium, High or Critical."),
+        ("Explain and fix", "SHAP shows what drove the score; the tool maps it to CIS / Security Hub and suggests the AWS CLI fix."),
+    ]), unsafe_allow_html=True)
+
+
+def render_scope_section():
+    st.markdown(sea_glass.section_html("Scope", "What it watches"), unsafe_allow_html=True)
+    st.markdown(sea_glass.table_html(
+        ["Resource", "Drift it catches", "Scenarios"],
+        [
+            ["S3 bucket", "Public access block off, public ACL, encryption off, KMS key swapped, TLS not enforced, versioning / logging / MFA delete off", "11"],
+            ["EC2 security group", "SSH, RDP, HTTP or database ports opened to 0.0.0.0/0, egress widened, flow logs off", "11"],
+            ["IAM policy / role", "Wildcard actions, wider resources, trust policy opened, MFA or external ID removed, extra access keys", "9"],
+            ["RDS instance", "Made public, encryption off, backups off, deletion protection off, Multi-AZ off, IAM auth off", "6"],
+        ]), unsafe_allow_html=True)
+
+
+def render_results_section():
+    import altair as alt
+    st.markdown(sea_glass.section_html(
+        "Results", "How accurate the model is",
+        "Split A shuffles records at random, so near-duplicates land on both sides and it scores 100%. "
+        "Split B holds out whole scenarios the model never saw, which is the honest number."),
+        unsafe_allow_html=True)
+    rows = []
+    for split, label in (("split_A_stratified_random", "Split A: random records"),
+                         ("split_B_scenario_group_aware", "Split B: unseen scenarios")):
+        for model, mlabel in (("random_forest", "Random Forest"), ("decision_tree", "Decision Tree")):
+            v = _metric(split, model)
+            if v is not None:
+                rows.append({"split": label, "model": mlabel, "accuracy": v})
+    if not rows:
+        st.info("Run the ML pipeline to produce results/metrics.json.")
+        return
+    df = pd.DataFrame(rows)
+    chart = (
+        alt.Chart(df).mark_bar(size=34)
+        .encode(
+            y=alt.Y("model:N", title=None, axis=alt.Axis(labelFontSize=13)),
+            x=alt.X("accuracy:Q", scale=alt.Scale(domain=[0, 1]), axis=alt.Axis(format="%"), title="Accuracy"),
+            color=alt.Color("model:N", legend=None,
+                            scale=alt.Scale(range=[sea_glass.PALETTE["accent"], "#C2561B"])),
+            row=alt.Row("split:N", title=None, header=alt.Header(labelFontSize=13, labelAngle=0, labelAlign="left")),
+            tooltip=["split", "model", alt.Tooltip("accuracy:Q", format=".1%")],
+        )
+        .properties(height=90, width=700, background="transparent")
+        .configure_view(strokeWidth=0)
+        .configure_axis(labelColor=sea_glass.PALETTE["ink"], titleColor=sea_glass.PALETTE["mist"], gridColor="#E4DFD3")
     )
+    st.altair_chart(chart)
+
+
+def render_comparison_section():
+    st.markdown(sea_glass.section_html("Comparison", "More scenarios beat more of the same records"),
+                unsafe_allow_html=True)
+    st.markdown(sea_glass.callouts_html([
+        ("37% → 90%", "Random Forest on unseen scenarios, 20 vs 37 scenarios"),
+        ("71% → 77%", "Decision Tree on the same test"),
+        ("711 → 1,238", "training records after adding 17 scenarios"),
+        ("3 → 4", "AWS services covered (RDS added)"),
+    ]), unsafe_allow_html=True)
+
+
+def render_findings_section():
+    st.markdown(sea_glass.section_html("Findings", "Dangerous drift it catches on its own"), unsafe_allow_html=True)
+    st.markdown(sea_glass.cards_html([
+        ("S3 · Critical", "Bucket made public", "Block Public Access switched off by hand in the console."),
+        ("EC2 · Critical", "SSH open to the internet", "Port 22 source changed from the office range to 0.0.0.0/0."),
+        ("IAM · Critical", "Wildcard permissions", "A scoped role quietly gains s3:* on every resource."),
+        ("RDS · Critical", "Database made public", "publicly_accessible flipped to true on a production database."),
+        ("EC2 · Critical", "Database port exposed", "MySQL / Postgres port opened to 0.0.0.0/0."),
+        ("S3 · High", "HTTPS no longer enforced", "The bucket policy that denied plain-HTTP requests is gone."),
+    ]), unsafe_allow_html=True)
+
+
+def render_limits_section():
+    st.markdown(sea_glass.section_html("Limits", "What this does not prove"), unsafe_allow_html=True)
+    summary = load_evaluation_limitation_summary()
+    st.markdown(
+        "- The training data is **synthetic**: 37 scenarios we wrote, expanded to 1,238 records. "
+        "There is no public labelled dataset of real AWS drift.\n"
+        f"- The 100% on a random split is leakage. The honest number is **{_fmt_pct(summary.get('split_b_accuracy'))}** "
+        "on scenarios the model never saw.\n"
+        f"- On one hard held-out case (E7), Random Forest is right only **{_fmt_pct(summary.get('e7_holdout_rf_correct_rate'))}** of the time.\n"
+        "- The deployed Lambda watches S3, EC2 and IAM; RDS is covered by the offline model only."
+    )
+    with st.expander("Model and dataset details"):
+        render_model_info()
+
+
+def render_live_aws_section():
+    st.markdown(sea_glass.section_html(
+        "Deployed · AWS", "Live findings from the real stack",
+        "Lambda, EventBridge, DynamoDB, SNS, API Gateway and Cognito run the same model against real AWS resources."),
+        unsafe_allow_html=True)
+    with st.expander("Open live AWS findings (sign-in required)"):
+        render_live_aws()
+
+
+def render_reproduce_section():
+    st.markdown(sea_glass.section_html("Reproduce", "Run it yourself"), unsafe_allow_html=True)
+    st.code(
+        "git clone " + REPO_URL + ".git\n"
+        "cd Cloud-Architecture-Project\n"
+        "pip install -r requirements.txt\n"
+        "python -m pytest tests -q\n"
+        "python -m streamlit run src/frontend/app.py",
+        language="bash",
+    )
+
+
+def render_footer():
+    st.markdown(sea_glass.footer_html(
+        "InfraDriftGuard is a BCSE355L Cloud Architecture Design project by Keshav Khandelwal and "
+        "Somasundar Shivappa Badami. Numbers come from results/metrics.json.",
+        [("GitHub repository", REPO_URL)]), unsafe_allow_html=True)
 
 
 def render_input_section():
-    st.header("1. Provide Desired vs. Actual State")
-    mode = st.radio("Input method", ["Predefined demonstration scenario", "Custom JSON"], horizontal=True)
-
     desired_text, actual_text = "", ""
     resource_type_hint = RESOURCE_TYPE_OPTIONS[0]
     scenario_ground_truth = None
 
-    if mode == "Predefined demonstration scenario":
+    c_mode, c_pick, c_new, c_count = st.columns([2.2, 5, 2.1, 2.2], vertical_alignment="bottom")
+    with c_mode:
+        mode = st.radio("Input", ["Demo scenario", "Custom JSON"], horizontal=False)
+
+    if mode == "Demo scenario":
         options = get_predefined_scenario_options()
-        labels = [f"{o['scenario_id']} — {o['description']} ({o['approved_risk_label']})" for o in options]
-        choice_idx = st.selectbox("Scenario", range(len(options)), format_func=lambda i: labels[i])
+        labels = [f"{o['scenario_id']} — {o['description']}" for o in options]
+        with c_pick:
+            choice_idx = st.selectbox("Scenario", range(len(options)), format_func=lambda i: labels[i])
         chosen = options[choice_idx]
-        desired, actual, resource_type_hint, ground_truth_label = generate_scenario_json(chosen["scenario_id"])
+        with c_new:
+            if st.button("New random example", width="stretch",
+                         help="Same scenario, freshly generated values (new bucket / group / role names, ports, etc.)"):
+                st.session_state["demo_seed"] = random.randrange(1, 10**6)
+        demo_seed = st.session_state.get("demo_seed", 42)
+        desired, actual, resource_type_hint, ground_truth_label = generate_scenario_json(
+            chosen["scenario_id"], seed=demo_seed, entity_id=1 + demo_seed % 50)
         desired_text = json.dumps(desired, indent=2)
         actual_text = json.dumps(actual, indent=2)
         scenario_ground_truth = ground_truth_label
-        st.caption(
-            f"Approved ground-truth risk label for this scenario: **{ground_truth_label}** "
-            f"(from `scenario_definitions.py` — shown for comparison, never fed to the model)."
-        )
+        # Key-bound text areas ignore a changed `value=`, so push the new example through session_state
+        # whenever the scenario or the random seed changes.
+        demo_sig = (chosen["scenario_id"], demo_seed)
+        if st.session_state.get("_demo_sig") != demo_sig:
+            st.session_state["_demo_sig"] = demo_sig
+            st.session_state["desired_input"] = desired_text
+            st.session_state["actual_input"] = actual_text
+        note = (f"Approved label for this scenario: {sea_glass.risk_chip(ground_truth_label)} "
+                "&nbsp;shown for comparison, never given to the model.")
     else:
-        resource_type_hint = st.selectbox("Resource type (required by extract_features)", RESOURCE_TYPE_OPTIONS)
-        st.caption(
-            "Custom JSON is not validated against a specific AWS schema — any two "
-            "JSON objects can be compared. If a changed attribute isn't one of the "
-            "20 approved attribute names, prediction will report 'unknown attribute' "
-            "rather than guess."
+        with c_pick:
+            resource_type_hint = st.selectbox("Resource type", RESOURCE_TYPE_OPTIONS)
+        with c_new:
+            st.write("")
+        note = ("Any two JSON objects can be compared. If a changed attribute isn't one of the "
+                "known attribute names, the result says so instead of guessing.")
+    with c_count:
+        drift_frequency = st.number_input(
+            "Past drift count",
+            min_value=0, max_value=50, value=0, step=1,
+            help="drift_frequency: how often this resource drifted before. It can't be read from one "
+                 "comparison, so supply your own estimate.",
         )
+    st.caption(note, unsafe_allow_html=True)
 
-    col1, col2 = st.columns(2)
-    with col1:
-        desired_input = st.text_area("Desired state (JSON)", value=desired_text, height=280, key="desired_input")
-    with col2:
-        actual_input = st.text_area("Actual state (JSON)", value=actual_text, height=280, key="actual_input")
-
-    drift_frequency = st.number_input(
-        "drift_frequency — historical drift count for this resource "
-        "(not derivable from a single state comparison; supply your own estimate)",
-        min_value=0, max_value=50, value=0, step=1,
-    )
-
+    col_d, col_a = st.columns(2)
+    with col_d:
+        desired_input = st.text_area("Desired state: what Terraform says", height=170, key="desired_input")
+    with col_a:
+        actual_input = st.text_area("Actual state: what AWS really has", height=170, key="actual_input")
     return desired_input, actual_input, resource_type_hint, drift_frequency, scenario_ground_truth
 
 
@@ -354,87 +535,95 @@ def render_shap_waterfall_figure(result, int_to_label):
         feature_names=result["feature_names"],
     )
     fig = plt.figure()
+    fig.patch.set_alpha(0)
     shap.plots.waterfall(explanation, show=False, max_display=12)
     plt.title(f"SHAP explanation — predicted: {int_to_label[predicted_class_int]}", fontsize=10)
     plt.tight_layout()
     return fig
 
 
-def render_results(result, scenario_ground_truth, int_to_label):
-    st.header("2. Drift Detection Result")
+def render_results(result, scenario_ground_truth, int_to_label, desired_state=None):
     drift_result = result["drift_result"]
 
-    col1, col2 = st.columns(2)
-    col1.metric("Drift detected", "Yes" if drift_result["has_drift"] else "No")
-    col2.metric("Number of changes", drift_result["num_changes"])
-
-    if drift_result["has_drift"]:
-        st.markdown(f"**Changed attributes:** {', '.join(drift_result['changed_attributes'])}")
-        st.subheader("Old vs. new values")
-        change_table = pd.DataFrame(drift_result["changes"])
-        st.dataframe(change_table, use_container_width=True)
-    else:
-        st.info("No drift detected — desired state and actual state are identical.")
-
-    if result["error"] == "unknown_attribute":
-        st.error(
-            "⚠️ One or more changed attributes are not in the model's known "
-            "feature schema (`ATTRIBUTE_KNOWLEDGE_BASE` in `feature_extraction.py`), "
-            "so a risk prediction cannot be generated for this input.\n\n"
-            f"Details: {result['message']}"
-        )
+    if not drift_result["has_drift"]:
+        st.markdown(sea_glass.verdict_html(
+            "No drift", "Desired and actual state are identical, so there is nothing to score."),
+            unsafe_allow_html=True)
         return
 
-    st.header("3. Extracted ML Features")
-    st.caption(
-        "Computed live by `feature_extraction.extract_features()` from the drift "
-        "result above — not hand-entered."
-    )
-    st.json(result["features"])
+    if result["error"] == "unknown_attribute":
+        st.markdown(sea_glass.verdict_html(
+            "Review", "A changed attribute is outside the model's known feature schema, so no "
+            "risk score was produced. Check it by hand."), unsafe_allow_html=True)
+        st.caption(f"Details: {result['message']}")
+        st.dataframe(pd.DataFrame(drift_result["changes"]), width="stretch", hide_index=True)
+        return
 
-    st.header("4. Risk Prediction — Primary Random Forest Model")
-    st.caption(
-        "Generated live by the saved **primary Random Forest model** "
-        "(`models/random_forest_model.joblib`) via `preprocessor.transform()` + "
-        "`model.predict_proba()` on the features above."
-    )
     predicted_label = result["predicted_label"]
+    confidence = float(result["probabilities"].get(predicted_label, 0.0))
+    detail = f"Random Forest, {confidence:.0%} confident."
     if scenario_ground_truth:
-        match = "✓ matches" if predicted_label == scenario_ground_truth else "✗ does NOT match"
-        st.markdown(f"### Predicted risk: **{predicted_label}**")
-        st.markdown(f"Approved ground-truth label for this scenario: **{scenario_ground_truth}** ({match})")
+        detail += (" Matches the approved label." if predicted_label == scenario_ground_truth
+                   else f" The approved label is {scenario_ground_truth}.")
+    st.markdown(sea_glass.verdict_html(predicted_label, detail), unsafe_allow_html=True)
+
+    m1, m2, m3 = st.columns(3)
+    m1.metric("Changes", drift_result["num_changes"])
+    m2.metric("Resource", result["features"].get("resource_type", "—"))
+    m3.metric("Public", "Yes" if result["features"].get("public_exposure") else "No")
+
+    t_changes, t_why, t_fix, t_compliance, t_features, t_prob = st.tabs(
+        ["Changes", "Why", "Fix", "Compliance", "Features", "Scores"])
+    with t_changes:
+        st.dataframe(pd.DataFrame(drift_result["changes"]).astype(str), width="stretch", hide_index=True)
+    with t_fix:
+        render_recommended_fixes(drift_result["changes"], desired_state)
+    with t_compliance:
+        render_compliance_table(drift_result["changes"])
+    with t_why:
+        additivity = result["additivity_check"]
+        st.caption(
+            f"SHAP TreeExplainer values for the predicted class ({predicted_label}). "
+            f"Additivity check {'holds' if additivity['additivity_holds'] else 'FAILED'} "
+            f"(max deviation {additivity['max_abs_diff_from_predict_proba']:.1e})."
+        )
+        st.markdown("**Pushed risk up**")
+        st.dataframe(pd.DataFrame(result["top_positive_contributors"], columns=["feature", "shap"]),
+                     width="stretch", hide_index=True)
+        st.markdown("**Pulled risk down**")
+        st.dataframe(pd.DataFrame(result["top_negative_contributors"], columns=["feature", "shap"]),
+                     width="stretch", hide_index=True)
+        fig = render_shap_waterfall_figure(result, int_to_label)
+        st.pyplot(fig)
+        plt.close(fig)
+    with t_features:
+        st.caption("Computed from the drift above by extract_features(), not typed in by hand.")
+        st.json(result["features"])
+    with t_prob:
+        render_probability_chart(result["probabilities"])
+
+
+def render_recommended_fixes(changes, desired_state):
+    st.caption("Advice only, nothing is run for you. " + remediation.TERRAFORM_STEP)
+    fixes = remediation.recommended_fixes(changes, desired_state)
+    if not fixes:
+        st.info("No recommended fix is known for these changes; check them by hand.")
+    for fix in fixes:
+        st.markdown(f"**{fix['attribute']}**: {fix['action']}")
+        st.code(fix["cli"], language="bash")
+
+
+def render_compliance_table(changes):
+    cis_ids = compliance.violated_cis_controls(changes)
+    if cis_ids:
+        st.caption(f"Violates {compliance.CIS_BENCHMARK}: " + ", ".join(f"**{c}**" for c in cis_ids))
     else:
-        st.markdown(f"### Predicted risk: **{predicted_label}**")
-
-    prob_df = pd.DataFrame([{"risk_level": k, "probability": v} for k, v in result["probabilities"].items()])
-    prob_df["risk_level"] = pd.Categorical(prob_df["risk_level"], categories=RISK_LABEL_ORDER, ordered=True)
-    prob_df = prob_df.sort_values("risk_level")
-    render_probability_chart(result["probabilities"])
-    st.dataframe(prob_df, use_container_width=True)
-
-    st.header("5. SHAP Local Explanation")
-    additivity = result["additivity_check"]
-    st.caption(
-        f"SHAP `TreeExplainer` values for the **predicted** class ({predicted_label}), "
-        f"computed live — not fabricated. Additivity check (base_value + Σ SHAP values "
-        f"vs. model output): max deviation = {additivity['max_abs_diff_from_predict_proba']:.2e} "
-        f"({'holds' if additivity['additivity_holds'] else 'FAILED'})."
-    )
-
-    colp, coln = st.columns(2)
-    with colp:
-        st.subheader("Top positive contributors")
-        st.table(pd.DataFrame(result["top_positive_contributors"], columns=["feature", "shap_value"]))
-    with coln:
-        st.subheader("Top negative contributors")
-        st.table(pd.DataFrame(result["top_negative_contributors"], columns=["feature", "shap_value"]))
-
-    fig = render_shap_waterfall_figure(result, int_to_label)
-    st.pyplot(fig)
-    plt.close(fig)
+        st.caption(f"No {compliance.CIS_BENCHMARK} control covers these changes; "
+                   "see the Security Hub column.")
+    st.dataframe(pd.DataFrame(compliance.compliance_rows(changes)), width="stretch", hide_index=True)
 
 
-RISK_COLORS = {"Critical": "#c0392b", "High": "#e67e22", "Medium": "#f1c40f", "Low": "#27ae60", "Review": "#8e44ad"}
+RISK_COLORS = {k: v for k, v in sea_glass.RISK_GLASS.items() if k != "No drift"}
 
 
 def render_probability_chart(probabilities):
@@ -445,42 +634,90 @@ def render_probability_chart(probabilities):
                        "probability": [float(probabilities.get(k, 0.0)) for k in RISK_LABEL_ORDER]})
     chart = (
         alt.Chart(df)
-        .mark_bar()
+        .mark_bar(cornerRadius=8, opacity=0.85)
         .encode(
             x=alt.X("probability:Q", scale=alt.Scale(domain=[0, 1]), axis=alt.Axis(format="%"), title="Probability"),
-            y=alt.Y("risk_level:N", sort=RISK_LABEL_ORDER, title=None),
+            y=alt.Y("risk_level:N", sort=RISK_LABEL_ORDER, title=None, axis=alt.Axis(labelOverlap=False)),
             color=alt.Color("risk_level:N", scale=alt.Scale(domain=list(RISK_COLORS), range=list(RISK_COLORS.values())),
                             legend=None),
             tooltip=["risk_level", alt.Tooltip("probability:Q", format=".1%")],
         )
-        .properties(height=150)
+        .properties(height=150, background="transparent")
+        .configure_view(strokeWidth=0)
+        .configure_axis(labelColor=sea_glass.PALETTE["ink"], titleColor=sea_glass.PALETTE["mist"],
+                        gridColor="rgba(34,54,61,.08)", domain=False)
     )
-    st.altair_chart(chart, use_container_width=True)
+    st.altair_chart(chart, width="stretch")
+
+
+def render_risk_trend_chart(trend):
+    """Worst risk per scan over time; each point is coloured by its label."""
+    import altair as alt
+
+    labels = list(sea_glass.RISK_GLASS)
+    base = alt.Chart(trend).encode(
+        x=alt.X("detected_at:T", title=None),
+        y=alt.Y("worst_score:Q", title="Worst risk", scale=alt.Scale(domain=[0, 4]),
+                axis=alt.Axis(values=list(range(5)),
+                              labelExpr="['No drift','Low','Medium','High','Critical'][datum.value]")),
+    )
+    line = base.mark_line(interpolate="step-after", color=sea_glass.PALETTE["mist"], opacity=.6)
+    points = base.mark_circle(size=90, opacity=.9).encode(
+        color=alt.Color("worst_label:N", legend=None,
+                        scale=alt.Scale(domain=labels, range=[sea_glass.RISK_GLASS[k] for k in labels])),
+        tooltip=[alt.Tooltip("detected_at:T", title="Scan", format="%Y-%m-%d %H:%M"),
+                 alt.Tooltip("worst_label:N", title="Worst risk"),
+                 alt.Tooltip("drifted_resources:Q", title="Drifted"),
+                 alt.Tooltip("scanned_resources:Q", title="Scanned")],
+    )
+    chart = ((line + points).properties(height=150, background="transparent")
+             .configure_view(strokeWidth=0)
+             .configure_axis(labelColor=sea_glass.PALETTE["ink"], titleColor=sea_glass.PALETTE["mist"],
+                             gridColor="rgba(34,54,61,.08)", domain=False))
+    st.altair_chart(chart, width="stretch")
 
 
 def render_offline_analyzer():
-    desired_input, actual_input, resource_type_hint, drift_frequency, scenario_ground_truth = render_input_section()
+    with st.container(border=True, key="sg_input"):
+        desired_input, actual_input, resource_type_hint, drift_frequency, scenario_ground_truth = \
+            render_input_section()
+        analyze = st.button("Analyze drift", type="primary", width="stretch")
 
-    if st.button("Analyze Drift", type="primary"):
+    if analyze:
         desired_state, err_d = parse_json_input(desired_input, "Desired state")
-        if err_d:
-            st.error(f"⚠️ {err_d}")
-            st.stop()
         actual_state, err_a = parse_json_input(actual_input, "Actual state")
-        if err_a:
-            st.error(f"⚠️ {err_a}")
-            st.stop()
+        st.session_state.pop("analysis", None)
+        if err_d or err_a:
+            st.session_state["analysis_error"] = err_d or err_a
+        else:
+            st.session_state.pop("analysis_error", None)
+            try:
+                artifacts = load_model_artifacts()
+            except FileNotFoundError as e:
+                st.session_state["analysis_error"] = f"Model files missing: {e}"
+            else:
+                result = run_drift_and_risk_pipeline(
+                    desired_state, actual_state, resource_type_hint, drift_frequency, artifacts
+                )
+                st.session_state["analysis"] = (result, scenario_ground_truth, artifacts["int_to_label"])
+                st.session_state["analysis_inputs"] = (desired_input, actual_input, drift_frequency)
+                st.session_state["analysis_desired"] = desired_state
 
-        try:
-            artifacts = load_model_artifacts()
-        except FileNotFoundError as e:
-            st.error(f"⚠️ Model loading error: {e}")
-            st.stop()
-
-        result = run_drift_and_risk_pipeline(
-            desired_state, actual_state, resource_type_hint, drift_frequency, artifacts
-        )
-        render_results(result, scenario_ground_truth, artifacts["int_to_label"])
+    if True:
+        with st.container(border=True, key="sg_results"):
+            st.subheader("Result")
+            if st.session_state.get("analysis_error"):
+                st.error(st.session_state["analysis_error"])
+            elif "analysis" in st.session_state:
+                if st.session_state.get("analysis_inputs") != (desired_input, actual_input, drift_frequency):
+                    st.caption("The input above has changed. Press **Analyze drift** to update this result.")
+                render_results(*st.session_state["analysis"], desired_state=st.session_state.get("analysis_desired"))
+            else:
+                st.markdown(
+                    "<div class='sg-empty'>Pick a scenario above and press "
+                    "<b>Analyze drift</b>. The risk level, what changed and why will appear here.</div>",
+                    unsafe_allow_html=True,
+                )
 
 
 def _load_streamlit_secrets_into_env():
@@ -552,18 +789,49 @@ def render_live_aws():
         st.info("No scans recorded yet. Click **Scan now**.")
         return
 
-    for f in sorted(findings, key=lambda x: x["resource_id"]):
-        label = f["risk_label"] if f["has_drift"] else "No drift"
-        color = RISK_COLORS.get(label, "#7f8c8d")
-        with st.container(border=True):
+    if st.toggle("Show risk trend", help="Loads up to 50 past scans per resource."):
+        try:
+            history = cloud_client.fetch_history(cfg["api_url"], st.session_state["id_token"],
+                                                 [f["resource_id"] for f in findings])
+        except cloud_client.CloudError as e:
+            st.error(str(e))
+        else:
+            trend = findings_analytics.risk_trend(history)
+            if len(trend) < 2:
+                st.caption("The trend needs at least two scans. Click **Scan now** again later.")
+            else:
+                render_risk_trend_chart(trend)
+
+    counts = findings_analytics.label_counts(findings)
+    for col, (label, n) in zip(st.columns(len(counts)), counts.items()):
+        col.metric(label, n)
+
+    f1, f2 = st.columns(2)
+    label_filter = f1.multiselect("Risk level", list(sea_glass.RISK_GLASS), placeholder="All risk levels")
+    type_filter = f2.multiselect("Resource type", RESOURCE_TYPE_OPTIONS, placeholder="All resource types")
+    shown = findings_analytics.filter_findings(findings, label_filter, type_filter)
+    st.download_button("Export findings (CSV)", findings_analytics.findings_to_csv(shown),
+                       file_name="infradriftguard_findings.csv", mime="text/csv",
+                       disabled=not shown)
+    if not shown:
+        st.markdown("<div class='sg-empty'>No findings match these filters. "
+                    "Clear a filter to see more.</div>", unsafe_allow_html=True)
+        return
+
+    for i, f in enumerate(sorted(shown, key=lambda x: x["resource_id"])):
+        label = findings_analytics.finding_label(f)
+        with st.container(border=True, key=f"sg_finding_{i}"):
             st.markdown(
                 f"**{f['resource_type']}** · `{f['resource_id']}` &nbsp; "
-                f"<span style='background:{color};color:white;padding:2px 8px;border-radius:4px'>{label}</span> "
+                f"{sea_glass.risk_chip(label)} "
                 f"&nbsp; <small>scanned {f['detected_at']}</small>",
                 unsafe_allow_html=True,
             )
             if f["has_drift"]:
                 st.table(pd.DataFrame(f["changes"]).astype(str))
+                cis_ids = compliance.violated_cis_controls(f["changes"])
+                if cis_ids:
+                    st.caption("CIS controls violated: " + ", ".join(cis_ids))
                 if f.get("probabilities"):
                     render_probability_chart(f["probabilities"])
                 if f.get("unmodelled_attributes"):
@@ -572,16 +840,26 @@ def render_live_aws():
                     st.success("Auto-remediated: " + "; ".join(f["remediation"]))
 
 
-def main():
-    st.set_page_config(page_title="InfraDriftGuard", layout="wide")
-    render_sidebar()
-    render_header()
+ASSETS_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+PITCH_VIDEO = os.path.join(ASSETS_DIR, "pitch.mp4")
 
-    offline_tab, live_tab = st.tabs(["Drift analyzer (offline model)", "Live AWS findings"])
-    with offline_tab:
-        render_offline_analyzer()
-    with live_tab:
-        render_live_aws()
+
+def main():
+    st.set_page_config(page_title="InfraDriftGuard", page_icon="🛡️", layout="wide",
+                       initial_sidebar_state="collapsed")
+    st.markdown(sea_glass.css(), unsafe_allow_html=True)
+    render_hero()
+    render_video_section()
+    render_live_demo_section()
+    render_method_section()
+    render_scope_section()
+    render_results_section()
+    render_comparison_section()
+    render_findings_section()
+    render_limits_section()
+    render_live_aws_section()
+    render_reproduce_section()
+    render_footer()
 
 
 if __name__ == "__main__":
